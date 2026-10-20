@@ -106,10 +106,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [previousVisit, setPrev] = useState<number | null>(null);
   const [history, setHistory] = useState<AppData[]>([]);
   const dataRef = useRef(data);
+  // eslint-disable-next-line react-hooks/refs -- intentional: latest-state ref for undo snapshots
   dataRef.current = data;
 
   useEffect(() => {
     const saved = loadData();
+    /* eslint-disable react-hooks/set-state-in-effect -- one-time hydration from localStorage */
     if (saved) {
       setPrev(saved.prefs.lastVisit);
       rawDispatch({ type: "hydrate", data: { ...saved, prefs: { ...saved.prefs, lastVisit: Date.now() } } });
@@ -117,6 +119,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setFirst(true);
     }
     setReady(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   useEffect(() => {

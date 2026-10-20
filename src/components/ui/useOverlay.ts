@@ -9,7 +9,9 @@ const FOCUSABLE =
 export function useOverlay(open: boolean, onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
-  closeRef.current = onClose;
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
