@@ -9,6 +9,7 @@ import { HeaderMenu } from "./HeaderMenu";
 import { RecoveryBanner } from "./RecoveryBanner";
 import { SampleBanner } from "./SampleBanner";
 import { TaskDrawer } from "./TaskDrawer";
+import { ShortcutsModal } from "./ShortcutsModal";
 import { WelcomeBack } from "./WelcomeBack";
 import type { QuickFilter } from "@/lib/taskUtils";
 import { uid, useStore } from "@/lib/store";
@@ -18,12 +19,13 @@ import type { Status, ViewMode } from "@/lib/types";
 const isView = (v: string | null): v is ViewMode => v === "status" || v === "category";
 
 export function BoardPage() {
-  const { ready, data, dispatch, syncTick, saveFailed } = useStore();
+  const { ready, data, dispatch, syncTick, saveFailed, undo, canUndo } = useStore();
   const { toast, dismiss } = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const [quick, setQuick] = useState<QuickFilter | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   // Freshly created tasks (id -> defaults) so an untouched one is discarded when the drawer closes.
   const fresh = useRef(new Map<string, { status: Status; categoryId: string }>());
@@ -110,20 +112,40 @@ export function BoardPage() {
     [data.categories, dispatch, openTask, toast],
   );
 
-  // "N" opens a new task unless the user is typing or an overlay is open.
-  const addRef = useRef(addTask);
+  // Global shortcuts (N new task, / search, ⌘Z undo, ? help) unless the user is typing or an overlay is open.
+  const keysRef = useRef({ addTask, undo, canUndo, toast });
   useEffect(() => {
-    addRef.current = addTask;
+    keysRef.current = { addTask, undo, canUndo, toast };
   });
-  const overlayOpen = !!selectedTaskId;
+  const overlayOpen = !!selectedTaskId || shortcutsOpen;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== "n" || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+      if (e.defaultPrevented || e.altKey) return;
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
       if (overlayOpen || document.querySelector('[aria-modal="true"]')) return;
-      e.preventDefault();
-      addRef.current();
+      const k = e.key.toLowerCase();
+      const mod = e.metaKey || e.ctrlKey;
+      const { addTask: add, undo: doUndo, canUndo: can, toast: say } = keysRef.current;
+      if (mod && k === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (can) {
+          doUndo();
+          say("Undone");
+        }
+      } else if (mod) {
+        return;
+      } else if (k === "n") {
+        e.preventDefault();
+        add();
+      } else if (e.key === "/") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      } else if (e.key === "?") {
+        e.preventDefault();
+        setShortcutsOpen(true);
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -137,7 +159,7 @@ export function BoardPage() {
         query={data.prefs.query}
         onQueryChange={(q) => dispatch({ type: "setPrefs", patch: { query: q } })}
         onAddTask={() => addTask()}
-        menuSlot={<HeaderMenu />}
+        menuSlot={<HeaderMenu onShowShortcuts={() => setShortcutsOpen(true)} />}
         searchRef={searchRef}
       />
       {ready && <RecoveryBanner />}
@@ -153,6 +175,7 @@ export function BoardPage() {
       {ready && !data.prefs.tourDone && (
         <CoachTour paused={!!selectedTaskId} onDone={() => dispatch({ type: "setPrefs", patch: { tourDone: true } })} />
       )}
+      <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <TaskDrawer taskId={selectedTaskId} onClose={closeTask} onOpenTask={openTask} />
     </div>
   );

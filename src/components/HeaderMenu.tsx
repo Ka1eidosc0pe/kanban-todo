@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 
 type Confirm = null | { kind: "reset" };
 
-export function HeaderMenu() {
+export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
   const { data, dispatch, dispatchUndoable, undo } = useStore();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -95,6 +95,7 @@ export function HeaderMenu() {
       </IconButton>
       {open && (
         <div id={menuId} role="menu" aria-label="App menu" className="absolute right-0 top-full z-40 mt-1 w-56 rounded-xl bg-white p-1 shadow-lg ring-1 ring-slate-200">
+          <button role="menuitem" type="button" className={item} onClick={() => run(() => onShowShortcuts?.())}>Keyboard shortcuts</button>
           <button role="menuitem" type="button" className={item} onClick={() => run(() => dispatch({ type: "setPrefs", patch: { tourDone: false } }))}>Replay tour</button>
           <div role="separator" className="my-1 h-px bg-slate-100" />
           <button role="menuitem" type="button" className={item + " text-rose-700"} onClick={() => run(() => setConfirm({ kind: "reset" }))}>Reset to sample data…</button>
