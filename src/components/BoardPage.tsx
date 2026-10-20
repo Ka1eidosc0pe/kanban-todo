@@ -24,6 +24,13 @@ export function BoardPage() {
   const params = useSearchParams();
   const [quick, setQuick] = useState<QuickFilter | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  // Freshly created tasks (id -> defaults) so an untouched one is discarded when the drawer closes.
+  const fresh = useRef(new Map<string, { status: Status; categoryId: string }>());
+  const prevSelected = useRef<string | null>(null);
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  });
 
   const urlView = params.get("view");
   const view: ViewMode = isView(urlView) ? urlView : data.prefs.view;
@@ -54,6 +61,21 @@ export function BoardPage() {
     if (syncTick > 0) toast("Board updated from another tab");
   }, [syncTick, toast]);
 
+  useEffect(() => {
+    const prev = prevSelected.current;
+    prevSelected.current = selectedTaskId;
+    const init = prev && prev !== selectedTaskId ? fresh.current.get(prev) : undefined;
+    if (!prev || !init) return;
+    fresh.current.delete(prev);
+    const { tasks } = dataRef.current;
+    const t = tasks.find((x) => x.id === prev);
+    if (!t) return;
+    const untouched =
+      t.title === "New task" && t.notes === "" && t.dueDate === null && t.priority === "medium" && t.parentId === null &&
+      t.status === init.status && t.categoryId === init.categoryId && !tasks.some((x) => x.parentId === prev);
+    if (untouched) dispatch({ type: "deleteTask", id: prev });
+  }, [selectedTaskId, dispatch]);
+
   const changeView = (v: ViewMode) => {
     dispatch({ type: "setPrefs", patch: { view: v } });
     router.replace(buildUrl(v, selectedTaskId), { scroll: false });
@@ -69,6 +91,7 @@ export function BoardPage() {
         return;
       }
       const id = uid();
+      fresh.current.set(id, { status: target.status ?? "created", categoryId });
       dispatch({ type: "addTask", task: { id, title: "New task", categoryId, ...(target.status ? { status: target.status } : {}) } });
       openTask(id);
     },
