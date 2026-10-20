@@ -2,7 +2,7 @@
 
 import { forwardRef, memo } from "react";
 import { Badge, cn } from "@/components/ui";
-import { formatDue, isOverdue } from "@/lib/taskUtils";
+import { todayISO, dueLabel, isDueToday, isOverdue } from "@/lib/taskUtils";
 import { CATEGORY_COLORS, STATUS_LABELS, type Category, type Status, type Task, type Priority, type ViewMode } from "@/lib/types";
 
 const STATUS_TONE = { created: "neutral", planned: "sky", in_progress: "amber", completed: "green", archived: "neutral" } as const;
@@ -32,7 +32,9 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
 ) {
   const isSub = task.parentId !== null;
   const done = task.status === "completed";
-  const overdue = isOverdue(task);
+  const today = todayISO();
+  const overdue = isOverdue(task, today);
+  const dueToday = isDueToday(task, today);
 
   const handleKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(e);
@@ -91,7 +93,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
             )}
             {view === "category" && <Badge tone={STATUS_TONE[task.status]} className="text-[10px]">{STATUS_LABELS[task.status]}</Badge>}
             {task.dueDate && (
-              <span className={cn("text-[10px]", overdue ? "font-semibold text-rose-600" : "text-slate-400")}>{formatDue(task.dueDate)}</span>
+              <span className={cn("text-[10px]", overdue ? "font-semibold text-rose-600" : dueToday ? "font-semibold text-amber-600" : "text-slate-400")}>{dueLabel(task.dueDate, today)}</span>
             )}
           </div>
         </div>
@@ -106,6 +108,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
       className={cn(
         "cursor-grab touch-manipulation select-none rounded-xl border border-slate-200 bg-white p-3 shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-500",
         overdue && "border-l-4 border-l-rose-400",
+        dueToday && "border-l-4 border-l-amber-400",
         dragging && "opacity-40",
         overlay && "cursor-grabbing rotate-2 shadow-xl",
         className,
@@ -131,10 +134,11 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
       {(task.dueDate || progress) && (
         <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
           {task.dueDate ? (
-            <span className={cn("inline-flex items-center gap-1", overdue ? "font-semibold text-rose-600" : "text-slate-500")}>
+            <span className={cn("inline-flex items-center gap-1", overdue ? "font-semibold text-rose-600" : dueToday ? "font-semibold text-amber-700" : "text-slate-500")}>
               <span aria-hidden>📅</span>
-              {formatDue(task.dueDate)}
+              {dueLabel(task.dueDate, today)}
               {overdue && <span className="rounded bg-rose-50 px-1 text-[10px] uppercase tracking-wide">Overdue</span>}
+              {dueToday && <span className="rounded bg-amber-50 px-1 text-[10px] uppercase tracking-wide">Due today</span>}
             </span>
           ) : (
             <span />

@@ -25,6 +25,29 @@ export function formatDue(dueDate: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
+const dayNum = (iso: string) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return Date.UTC(y, m - 1, d) / 86400000;
+};
+
+/** "Today", "Tomorrow", "Yesterday", a weekday ("Fri") within the next 6 days, else formatDue(). */
+export function dueLabel(dueDate: string, today = todayISO()): string {
+  const diff = dayNum(dueDate) - dayNum(today);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  if (diff > 1 && diff <= 6) {
+    const [y, m, d] = dueDate.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short" });
+  }
+  return formatDue(dueDate);
+}
+
+/** Open task due today (styled amber, distinct from overdue). */
+export function isDueToday(task: Task, today = todayISO()): boolean {
+  return task.dueDate === today && task.status !== "completed" && task.status !== "archived";
+}
+
 /** Done/total subtask counts per parent id, computed in one pass. */
 export function subtaskProgressMap(tasks: Task[]): Map<string, { done: number; total: number }> {
   const m = new Map<string, { done: number; total: number }>();

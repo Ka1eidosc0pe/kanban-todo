@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Badge, Button, Drawer, EmptyState, IconButton, Modal, Select, TextArea, TextField, cn, useToast } from "@/components/ui";
 import { uid, useStore } from "@/lib/store";
-import { toggleDonePatch } from "@/lib/taskUtils";
+import { dueLabel, formatDue, toggleDonePatch } from "@/lib/taskUtils";
 import { STATUSES, STATUS_LABELS, type Priority, type Status, type Task } from "@/lib/types";
 
 export interface TaskDrawerProps {
@@ -168,7 +168,7 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
             />
             <Select label="Status" value={task.status} onChange={(e) => patch({ status: e.target.value as Status })} options={STATUS_OPTIONS} />
             <Select label="Priority" value={task.priority} onChange={(e) => patch({ priority: e.target.value as Priority })} options={PRIORITY_OPTIONS} />
-            <TextField label="Due date" type="date" value={task.dueDate ?? ""} onChange={(e) => patch({ dueDate: e.target.value || null })} />
+            <TextField label="Due date" type="date" hint={task.dueDate && dueLabel(task.dueDate) !== formatDue(task.dueDate) ? dueLabel(task.dueDate) : undefined} value={task.dueDate ?? ""} onChange={(e) => patch({ dueDate: e.target.value || null })} />
           </div>
 
           {!isSub && (
