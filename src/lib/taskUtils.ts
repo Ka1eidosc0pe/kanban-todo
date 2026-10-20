@@ -33,7 +33,8 @@ export function matchesQuery(task: Task, query: string): boolean {
 
 const isOpen = (t: Task) => t.status !== "completed" && t.status !== "archived";
 
-function addDaysISO(days: number): string {
+/** Local-date yyyy-mm-dd, `days` from today (negative = past). */
+export function addDaysISO(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
