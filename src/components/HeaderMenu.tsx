@@ -6,12 +6,17 @@ import { createSeed } from "@/lib/seed";
 import { useStore } from "@/lib/store";
 
 type Confirm = null | { kind: "reset" };
+const ARCHIVE_OPTIONS: { value: number | null; label: string }[] = [
+  { value: null, label: "Off" },
+  ...[1, 3, 7, 14, 30].map((d) => ({ value: d, label: `After ${d} day${d === 1 ? "" : "s"}` })),
+];
 
 export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
   const { data, dispatch, dispatchUndoable, undo } = useStore();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState<Confirm>(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
@@ -61,7 +66,7 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
     const seed = createSeed();
     const id = dispatchUndoable({
       type: "restore",
-      data: { ...seed, prefs: { ...seed.prefs, tourDone: data.prefs.tourDone, lastVisit: data.prefs.lastVisit } },
+      data: { ...seed, prefs: { ...seed.prefs, tourDone: data.prefs.tourDone, autoArchiveDays: data.prefs.autoArchiveDays, lastVisit: data.prefs.lastVisit } },
     });
     toast({ message: "Board reset to sample data", action: { label: "Undo", onClick: () => undo(id) } });
     setConfirm(null);
@@ -97,11 +102,35 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
         <div id={menuId} role="menu" aria-label="App menu" className="absolute right-0 top-full z-40 mt-1 w-56 rounded-xl bg-white p-1 shadow-lg ring-1 ring-slate-200">
           <button role="menuitem" type="button" className={item} onClick={() => run(() => onShowShortcuts?.())}>Keyboard shortcuts</button>
           <button role="menuitem" type="button" className={item} onClick={() => run(() => dispatch({ type: "setPrefs", patch: { tourDone: false } }))}>Replay tour</button>
+          <button role="menuitem" type="button" className={item} onClick={() => run(() => setArchiveOpen(true))}>Auto-archive completed…</button>
           <div role="separator" className="my-1 h-px bg-slate-100" />
           <button role="menuitem" type="button" className={item + " text-rose-700"} onClick={() => run(() => setConfirm({ kind: "reset" }))}>Reset to sample data…</button>
         </div>
       )}
 
+      <Modal
+        open={archiveOpen}
+        onClose={() => setArchiveOpen(false)}
+        title="Auto-archive completed tasks"
+        description="Completed tasks (and their subtasks) move to Archived once they are this old. Checked on load and hourly; you can undo."
+        footer={<Button variant="primary" onClick={() => setArchiveOpen(false)}>Done</Button>}
+      >
+        <fieldset className="flex flex-col gap-2">
+          <legend className="sr-only">Auto-archive completed tasks</legend>
+          {ARCHIVE_OPTIONS.map((o) => (
+            <label key={o.label} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+              <input
+                type="radio"
+                name="auto-archive"
+                className="accent-indigo-600"
+                checked={data.prefs.autoArchiveDays === o.value}
+                onChange={() => dispatch({ type: "setPrefs", patch: { autoArchiveDays: o.value } })}
+              />
+              {o.label}
+            </label>
+          ))}
+        </fieldset>
+      </Modal>
       <Modal
         open={confirm?.kind === "reset"}
         onClose={() => setConfirm(null)}

@@ -42,6 +42,7 @@ function migrate(parsed: unknown): AppData | null {
         status: isObj(prefs.collapsed) && Array.isArray(prefs.collapsed.status) ? prefs.collapsed.status : [],
         category: isObj(prefs.collapsed) && Array.isArray(prefs.collapsed.category) ? prefs.collapsed.category : [],
       },
+      autoArchiveDays: typeof prefs.autoArchiveDays === "number" && prefs.autoArchiveDays > 0 ? Math.floor(prefs.autoArchiveDays) : null,
       wipLimit: typeof prefs.wipLimit === "number" && prefs.wipLimit > 0 ? Math.floor(prefs.wipLimit) : null,
     },
     isSample: parsed.isSample === true,

@@ -35,6 +35,6 @@ export function createSeed(): AppData {
     categories,
     tasks,
     isSample: true,
-    prefs: { view: "status", showArchived: false, query: "", filters: DEFAULT_FILTERS, sort: "manual", collapsed: { status: [], category: [] }, wipLimit: null, tourDone: false, lastVisit: null },
+    prefs: { view: "status", showArchived: false, query: "", filters: DEFAULT_FILTERS, sort: "manual", collapsed: { status: [], category: [] }, wipLimit: null, autoArchiveDays: null, tourDone: false, lastVisit: null },
   };
 }

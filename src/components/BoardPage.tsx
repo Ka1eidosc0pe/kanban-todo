@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AutoArchive } from "./AutoArchive";
 import { Board } from "./Board";
 import { CoachTour } from "./CoachTour";
 import { Header } from "./Header";
@@ -162,6 +163,7 @@ export function BoardPage() {
         menuSlot={<HeaderMenu onShowShortcuts={() => setShortcutsOpen(true)} />}
         searchRef={searchRef}
       />
+      {ready && <AutoArchive />}
       {ready && <RecoveryBanner />}
       {ready && <SampleBanner />}
       {ready && <WelcomeBack active={quick} onPick={setQuick} />}

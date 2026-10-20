@@ -33,6 +33,7 @@ export interface Task {
   dueDate: string | null; // yyyy-mm-dd
   parentId: string | null; // non-null => subtask
   statusBeforeDone?: Status; // status to restore when a checkbox-completed task is unchecked
+  completedAt?: number; // when it last became completed (kept while archived; absent on tasks completed before this existed)
   repeat?: Repeat; // main tasks with a due date only: completing spawns the next occurrence
   spawnedNext?: boolean; // set on a completed recurring task once its next occurrence exists (never spawn twice)
   order: number; // position within its list (lower first)
@@ -58,6 +59,7 @@ export interface Prefs {
   sort: SortMode;
   collapsed: Record<BoardView, string[]>; // collapsed column keys per view
   wipLimit: number | null; // limit for the Status view's "In progress" column (null = none)
+  autoArchiveDays: number | null; // archive completed tasks after this many days (null = off)
   tourDone: boolean;
   lastVisit: number | null;
 }

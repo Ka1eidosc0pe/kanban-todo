@@ -197,3 +197,13 @@ export function nextDueDate(due: string, rule: Repeat): string {
   if (rule === "weekdays") while (dt.getUTCDay() === 0 || dt.getUTCDay() === 6) dt.setUTCDate(dt.getUTCDate() + 1);
   return fmt(dt);
 }
+
+const DAY_MS = 86400000;
+
+/** When a completed task was completed (legacy tasks without `completedAt` fall back to `updatedAt`). */
+export const completedTime = (t: Task) => t.completedAt ?? t.updatedAt;
+
+/** Completed main tasks whose completion is older than `days` days (candidates for auto-archive). */
+export function staleCompletedIds(tasks: Task[], days: number, now = Date.now()): string[] {
+  return tasks.filter((t) => t.status === "completed" && !t.parentId && completedTime(t) < now - days * DAY_MS).map((t) => t.id);
+}

@@ -121,6 +121,17 @@ function nextOrder(tasks: Task[]) {
   return tasks.reduce((m, t) => Math.max(m, t.order), -1) + 1;
 }
 
+/** Keeps `completedAt` in step with status: stamped on completing, kept while archived, cleared once reopened. */
+function stampCompletion(prev: Task, cur: Task, now: number): Task {
+  if (cur.status === "completed" && prev.status !== "completed") return { ...cur, completedAt: now };
+  if (cur.status !== "completed" && cur.status !== "archived" && cur.completedAt !== undefined) {
+    const next = { ...cur };
+    delete next.completedAt;
+    return next;
+  }
+  return cur;
+}
+
 /**
  * When a recurring main task has just become completed, append its next occurrence (fresh "created" copies of
  * its subtasks too) and mark it spawned. Ids are derived, not random, so the reducer stays pure (it also runs
@@ -171,7 +182,7 @@ function reducer(state: AppData, a: Action): AppData {
       // category: subtasks can't change it; a parent's change cascades to its subtasks
       const cat = target.parentId === null ? categoryId : undefined;
       const archiveSubs = target.parentId === null && rest.status === "archived" && target.status !== "archived";
-      const updated: Task = { ...target, ...rest, ...(cat ? { categoryId: cat } : {}), updatedAt: now };
+      const updated = stampCompletion(target, { ...target, ...rest, ...(cat ? { categoryId: cat } : {}), updatedAt: now }, now);
       const tasks = state.tasks.map((t) => {
         if (t.id === a.id) return updated;
         if (t.parentId !== a.id) return t;
@@ -192,12 +203,16 @@ function reducer(state: AppData, a: Action): AppData {
       const moving = state.tasks.find((t) => t.id === a.id);
       if (!moving) return state;
       const rest = state.tasks.filter((t) => t.id !== a.id);
-      const updated: Task = {
-        ...moving,
-        status: a.status ?? moving.status,
-        categoryId: moving.parentId ? moving.categoryId : (a.categoryId ?? moving.categoryId), // subtasks keep their parent's
-        updatedAt: now,
-      };
+      const updated = stampCompletion(
+        moving,
+        {
+          ...moving,
+          status: a.status ?? moving.status,
+          categoryId: moving.parentId ? moving.categoryId : (a.categoryId ?? moving.categoryId), // subtasks keep their parent's
+          updatedAt: now,
+        },
+        now,
+      );
       const cascade = !moving.parentId && updated.categoryId !== moving.categoryId;
       const archiveSubs = !moving.parentId && updated.status === "archived" && moving.status !== "archived";
       const idx = a.beforeId ? rest.findIndex((t) => t.id === a.beforeId) : -1;
