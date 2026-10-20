@@ -94,10 +94,10 @@ function DeleteForm({ category, onClose }: { category: Category; onClose: () => 
   const [target, setTarget] = useState(others[0]?.id ?? "");
 
   const confirm = () => {
-    dispatchUndoable({ type: "deleteCategory", id: category.id, moveTo: mode === "move" ? target : null });
+    const id = dispatchUndoable({ type: "deleteCategory", id: category.id, moveTo: mode === "move" ? target : null });
     toast({
       message: mode === "move" ? `Deleted “${category.name}”, moved ${count} task${count === 1 ? "" : "s"}` : `Deleted “${category.name}” and its tasks`,
-      action: { label: "Undo", onClick: undo },
+      action: { label: "Undo", onClick: () => undo(id) },
     });
     onClose();
   };
@@ -157,8 +157,8 @@ export function CategoryManager({ dialog, onDialogChange }: CategoryManagerProps
   const requestDelete = (c: Category) => {
     if (lastOne) return;
     if (countFor(c.id) === 0) {
-      dispatchUndoable({ type: "deleteCategory", id: c.id, moveTo: null });
-      toast({ message: `Deleted “${c.name}”`, action: { label: "Undo", onClick: undo } });
+      const id = dispatchUndoable({ type: "deleteCategory", id: c.id, moveTo: null });
+      toast({ message: `Deleted “${c.name}”`, action: { label: "Undo", onClick: () => undo(id) } });
     } else {
       onDialogChange({ kind: "delete", id: c.id });
     }

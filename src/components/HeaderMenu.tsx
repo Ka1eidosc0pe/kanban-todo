@@ -94,15 +94,15 @@ export function HeaderMenu() {
         isSample: false,
         prefs: { ...seedPrefs, ...confirm.data.prefs, tourDone: true, lastVisit: data.prefs.lastVisit },
       };
-      dispatchUndoable({ type: "restore", data: next });
-      toast({ message: `Imported ${next.tasks.length} tasks`, action: { label: "Undo", onClick: undo } });
+      const id = dispatchUndoable({ type: "restore", data: next });
+      toast({ message: `Imported ${next.tasks.length} tasks`, action: { label: "Undo", onClick: () => undo(id) } });
     } else {
       const seed = createSeed();
-      dispatchUndoable({
+      const id = dispatchUndoable({
         type: "restore",
         data: { ...seed, prefs: { ...seed.prefs, tourDone: data.prefs.tourDone, lastVisit: data.prefs.lastVisit } },
       });
-      toast({ message: "Board reset to sample data", action: { label: "Undo", onClick: undo } });
+      toast({ message: "Board reset to sample data", action: { label: "Undo", onClick: () => undo(id) } });
     }
     setConfirm(null);
   };

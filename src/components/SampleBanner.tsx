@@ -10,8 +10,8 @@ export function SampleBanner() {
   if (!data.isSample) return null;
 
   const clear = () => {
-    dispatchUndoable({ type: "clearSamples" });
-    toast({ message: "Sample tasks cleared", action: { label: "Undo", onClick: undo } });
+    const id = dispatchUndoable({ type: "clearSamples" });
+    toast({ message: "Sample tasks cleared", action: { label: "Undo", onClick: () => undo(id) } });
   };
 
   return (

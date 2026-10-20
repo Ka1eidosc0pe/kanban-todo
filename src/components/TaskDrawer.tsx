@@ -85,17 +85,17 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
   };
 
   const archive = () => {
-    dispatchUndoable({ type: "updateTask", id: task.id, patch: { status: "archived" } });
-    toast({ message: `Archived "${task.title}"`, action: { label: "Undo", onClick: undo } });
+    const id = dispatchUndoable({ type: "updateTask", id: task.id, patch: { status: "archived" } });
+    toast({ message: `Archived "${task.title}"`, action: { label: "Undo", onClick: () => undo(id) } });
     onClose();
   };
 
   const remove = () => {
     setConfirmDelete(false);
-    dispatchUndoable({ type: "deleteTask", id: task.id });
+    const id = dispatchUndoable({ type: "deleteTask", id: task.id });
     toast({
       message: subtasks.length ? `Deleted "${task.title}" and ${subtasks.length} subtask${subtasks.length > 1 ? "s" : ""}` : `Deleted "${task.title}"`,
-      action: { label: "Undo", onClick: undo },
+      action: { label: "Undo", onClick: () => undo(id) },
     });
     onClose();
   };
@@ -233,8 +233,8 @@ function Subtasks({
     setDraft("");
   };
   const remove = (s: Task) => {
-    dispatchUndoable({ type: "deleteTask", id: s.id });
-    toast({ message: `Deleted subtask "${s.title}"`, action: { label: "Undo", onClick: undo } });
+    const id = dispatchUndoable({ type: "deleteTask", id: s.id });
+    toast({ message: `Deleted subtask "${s.title}"`, action: { label: "Undo", onClick: () => undo(id) } });
   };
 
   return (
