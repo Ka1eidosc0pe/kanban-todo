@@ -67,6 +67,8 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
           aria-checked={done}
           aria-label={done ? "Mark subtask not done" : "Mark subtask done"}
           onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()} // keep the checkbox from starting a drag
+          onTouchStart={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
