@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import { ToastProvider } from "@/components/ui";
@@ -11,6 +11,10 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "Kanban To-Do",
   description: "A kanban to-do board with drag-and-drop, status and category views, and subtasks. Saved in your browser.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#4f46e5",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
