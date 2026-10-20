@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge, Button, Drawer, EmptyState, IconButton, Modal, Select, TextArea, TextField, cn, useToast } from "@/components/ui";
+import { Markdown, toggleChecklistLine } from "@/lib/markdown";
 import { uid, useStore } from "@/lib/store";
 import { useSpawnToast } from "./useSpawnToast";
 import { dueLabel, formatDue, toggleDonePatch } from "@/lib/taskUtils";
@@ -49,6 +50,12 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
   const [title, setTitle] = useState(task.title);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const showRendered = !editingNotes && task.notes.trim() !== ""; // empty notes go straight to the textarea
+  useEffect(() => {
+    if (editingNotes) notesRef.current?.focus();
+  }, [editingNotes]);
 
   const isSub = task.parentId !== null;
   const parent = isSub ? data.tasks.find((t) => t.id === task.parentId) : undefined;
@@ -161,7 +168,35 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
             className="text-base font-semibold"
             error={title.trim() ? undefined : "A title is required"}
           />
-          <TextArea label="Notes" value={task.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Add details…" />
+          {showRendered ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span id="notes-label" className="text-xs font-medium text-slate-600">Notes</span>
+                <Button size="sm" variant="ghost" onClick={() => setEditingNotes(true)}>Edit</Button>
+              </div>
+              <div
+                tabIndex={0}
+                aria-labelledby="notes-label"
+                title="Click to edit"
+                onClick={(e) => !(e.target as HTMLElement).closest("a,button") && setEditingNotes(true)}
+                onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && setEditingNotes(true)}
+                className="min-h-24 cursor-text rounded-lg bg-white px-3 py-2 ring-1 ring-inset ring-slate-300 hover:ring-slate-400 focus-visible:outline-2 focus-visible:outline-indigo-500"
+              >
+                <Markdown source={task.notes} onToggle={(line) => patch({ notes: toggleChecklistLine(task.notes, line) })} />
+              </div>
+            </div>
+          ) : (
+            <TextArea
+              ref={notesRef}
+              label="Notes"
+              value={task.notes}
+              onChange={(e) => patch({ notes: e.target.value })}
+              onFocus={() => setEditingNotes(true)} // keeps the textarea up while typing the first characters
+              onBlur={() => setEditingNotes(false)}
+              placeholder="Add details…"
+              hint="Supports **bold**, *italic*, lists, - [ ] checklists, links"
+            />
+          )}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Select
               label="Category"

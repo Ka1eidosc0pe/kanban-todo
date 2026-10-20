@@ -1,7 +1,8 @@
 "use client";
 
-import { forwardRef, memo } from "react";
+import { forwardRef, memo, useMemo } from "react";
 import { Badge, cn } from "@/components/ui";
+import { checklistCounts } from "@/lib/markdown";
 import { todayISO, dueLabel, isDueToday, isOverdue } from "@/lib/taskUtils";
 import { CATEGORY_COLORS, STATUS_LABELS, type Category, type Status, type Task, type Priority, type ViewMode } from "@/lib/types";
 
@@ -37,6 +38,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
   const today = todayISO();
   const overdue = isOverdue(task, today);
   const dueToday = isDueToday(task, today);
+  const checklist = useMemo(() => checklistCounts(task.notes), [task.notes]);
 
   const handleKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(e);
@@ -139,7 +141,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
           {pr.label}
         </span>
       </div>
-      {(task.dueDate || progress) && (
+      {(task.dueDate || progress || checklist) && (
         <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
           {task.dueDate ? (
             <span className={cn("inline-flex items-center gap-1", overdue ? "font-semibold text-rose-600" : dueToday ? "font-semibold text-amber-700" : "text-slate-500")}>
@@ -151,6 +153,12 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
           ) : (
             <span />
           )}
+          <span className="inline-flex items-center gap-2">
+          {checklist && (
+            <span className="text-slate-500" title={`${checklist.done} of ${checklist.total} checklist items done`}>
+              <span aria-hidden>☑</span> {checklist.done}/{checklist.total}
+            </span>
+          )}
           {progress && (
             <span className="inline-flex items-center gap-1.5 text-slate-500" title={`${progress.done} of ${progress.total} subtasks done`}>
               <span className="h-1 w-10 overflow-hidden rounded-full bg-slate-200" aria-hidden>
@@ -159,6 +167,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
               {progress.done}/{progress.total}
             </span>
           )}
+          </span>
         </div>
       )}
     </div>
