@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, memo } from "react";
 import { Badge, cn } from "@/components/ui";
 import { formatDue, isOverdue } from "@/lib/taskUtils";
 import { CATEGORY_COLORS, STATUS_LABELS, type Category, type Status, type Task, type Priority, type ViewMode } from "@/lib/types";
@@ -26,7 +26,7 @@ export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>
   overlay?: boolean;
 }
 
-export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(function TaskCard(
+export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function TaskCard(
   { task, category, parent, progress, view, onOpen, onToggleDone, dragging, overlay, className, onKeyDown, ...rest },
   ref,
 ) {
@@ -149,4 +149,4 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(function TaskC
       )}
     </div>
   );
-});
+}));

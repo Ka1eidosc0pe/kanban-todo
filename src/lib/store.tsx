@@ -5,6 +5,8 @@ import { createSeed } from "./seed";
 import { STORAGE_KEY, loadData, saveData } from "./storage";
 import type { AppData, Category, Prefs, Status, Task } from "./types";
 
+const SAVE_DELAY = 300; // ms; saves are batched (trailing)
+
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
 type Action =
@@ -230,6 +232,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [syncTick, setSyncTick] = useState(0);
   const [saveFailed, setSaveFailed] = useState(false);
   const externalRef = useRef<AppData | null>(null); // data just loaded from another tab: don't write it back
+  const pendingRef = useRef<AppData | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Write the latest pending data now (skipping data that just came from another tab).
+  const flush = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+    const d = pendingRef.current;
+    pendingRef.current = null;
+    if (d && d !== externalRef.current) setSaveFailed(!saveData(d));
+  }, []);
   const history = useRef<{ id: number; record: UndoRecord }[]>([]);
   const nextUndoId = useRef(1);
   const dataRef = useRef(data);
@@ -251,8 +263,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (ready && data !== externalRef.current) setSaveFailed(!saveData(data));
-  }, [data, ready]);
+    if (!ready) return;
+    pendingRef.current = data;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(flush, SAVE_DELAY);
+  }, [data, ready, flush]);
+
+  // Never lose a pending write when the page goes away.
+  useEffect(() => {
+    const onHide = () => document.visibilityState === "hidden" && flush();
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+      document.removeEventListener("visibilitychange", onHide);
+      flush();
+    };
+  }, [flush]);
 
   // Another tab wrote the board: adopt it (stale undo records are unsafe, so drop them).
   useEffect(() => {

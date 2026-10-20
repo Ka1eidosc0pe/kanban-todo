@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -51,12 +51,14 @@ interface ColumnDef {
 
 function SortableCard({ task, children }: { task: Task; children: (p: React.ComponentProps<typeof TaskCard>) => React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const t = CSS.Transform.toString(transform);
+  const style = useMemo(() => ({ transform: t, transition }), [t, transition]); // stable so memoized cards can skip renders
   return (
     <>
       {children({
         task,
         ref: setNodeRef,
-        style: { transform: CSS.Transform.toString(transform), transition },
+        style,
         dragging: isDragging,
         ...attributes,
         ...listeners,
@@ -148,7 +150,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     }
   };
 
-  const toggleDone = (t: Task) => dispatch({ type: "updateTask", id: t.id, patch: toggleDonePatch(t) });
+  const toggleDone = useCallback((t: Task) => dispatch({ type: "updateTask", id: t.id, patch: toggleDonePatch(t) }), [dispatch]);
 
   const quickAdd = (title: string) => {
     const categoryId = data.categories[0]?.id;
