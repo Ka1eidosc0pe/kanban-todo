@@ -3,8 +3,9 @@
 import { useRef, useState } from "react";
 import { Badge, Button, Drawer, EmptyState, IconButton, Modal, Select, TextArea, TextField, cn, useToast } from "@/components/ui";
 import { uid, useStore } from "@/lib/store";
+import { useSpawnToast } from "./useSpawnToast";
 import { dueLabel, formatDue, toggleDonePatch } from "@/lib/taskUtils";
-import { STATUSES, STATUS_LABELS, type Priority, type Status, type Task } from "@/lib/types";
+import { REPEAT_LABELS, STATUSES, STATUS_LABELS, type Priority, type Repeat, type Status, type Task } from "@/lib/types";
 
 export interface TaskDrawerProps {
   /** Id of the open task (from `?task=`), or null when closed. */
@@ -54,7 +55,11 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
   const category = data.categories.find((c) => c.id === task.categoryId);
   const subtasks = data.tasks.filter((t) => t.parentId === task.id);
   const doneCount = subtasks.filter((t) => t.status === "completed").length;
-  const patch = (p: Partial<Omit<Task, "id">>) => dispatch({ type: "updateTask", id: task.id, patch: p });
+  const announceSpawn = useSpawnToast();
+  const patch = (p: Partial<Omit<Task, "id">>) => {
+    if (p.status === "completed" && task.repeat) announceSpawn(dispatchUndoable({ type: "updateTask", id: task.id, patch: p }));
+    else dispatch({ type: "updateTask", id: task.id, patch: p });
+  };
 
   const commitTitle = (value: string) => {
     setTitle(value);
@@ -168,7 +173,17 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
             />
             <Select label="Status" value={task.status} onChange={(e) => patch({ status: e.target.value as Status })} options={STATUS_OPTIONS} />
             <Select label="Priority" value={task.priority} onChange={(e) => patch({ priority: e.target.value as Priority })} options={PRIORITY_OPTIONS} />
-            <TextField label="Due date" type="date" hint={task.dueDate && dueLabel(task.dueDate) !== formatDue(task.dueDate) ? dueLabel(task.dueDate) : undefined} value={task.dueDate ?? ""} onChange={(e) => patch({ dueDate: e.target.value || null })} />
+            <TextField label="Due date" type="date" hint={task.dueDate && dueLabel(task.dueDate) !== formatDue(task.dueDate) ? dueLabel(task.dueDate) : undefined} value={task.dueDate ?? ""} onChange={(e) => patch(e.target.value ? { dueDate: e.target.value } : { dueDate: null, repeat: undefined })} />
+            {!isSub && (
+              <Select
+                label="Repeat"
+                value={task.dueDate ? (task.repeat ?? "") : ""}
+                onChange={(e) => patch({ repeat: (e.target.value || undefined) as Repeat | undefined })}
+                options={[{ value: "", label: "None" }, ...(Object.keys(REPEAT_LABELS) as Repeat[]).map((r) => ({ value: r, label: REPEAT_LABELS[r] }))]}
+                disabled={!task.dueDate}
+                hint={task.dueDate ? undefined : "Set a due date to repeat"}
+              />
+            )}
           </div>
 
           {!isSub && (

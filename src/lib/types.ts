@@ -14,6 +14,9 @@ export type ViewMode = "status" | "category" | "agenda";
 /** Views that are dnd column boards (agenda is a plain list). */
 export type BoardView = Exclude<ViewMode, "agenda">;
 
+export type Repeat = "daily" | "weekdays" | "weekly" | "monthly";
+export const REPEAT_LABELS: Record<Repeat, string> = { daily: "Daily", weekdays: "Weekdays", weekly: "Weekly", monthly: "Monthly" };
+
 export interface Category {
   id: string;
   name: string;
@@ -30,6 +33,8 @@ export interface Task {
   dueDate: string | null; // yyyy-mm-dd
   parentId: string | null; // non-null => subtask
   statusBeforeDone?: Status; // status to restore when a checkbox-completed task is unchecked
+  repeat?: Repeat; // main tasks with a due date only: completing spawns the next occurrence
+  spawnedNext?: boolean; // set on a completed recurring task once its next occurrence exists (never spawn twice)
   order: number; // position within its list (lower first)
   createdAt: number;
   updatedAt: number;

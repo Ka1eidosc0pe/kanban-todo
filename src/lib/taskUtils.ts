@@ -1,4 +1,4 @@
-import type { DueFilter, Filters, Priority, SortMode, Task, ViewMode } from "./types";
+import type { DueFilter, Filters, Priority, Repeat, SortMode, Task, ViewMode } from "./types";
 
 /** Patch for the done checkbox: remembers the prior status and restores it on uncheck. */
 export function toggleDonePatch(t: Task): Partial<Task> {
@@ -182,4 +182,18 @@ export function groupAgenda(tasks: Task[], today = todayISO()): { key: AgendaGro
   const due = (t: Task) => t.dueDate ?? "9999-99-99";
   const open = tasks.filter(isOpen).sort((a, b) => due(a).localeCompare(due(b)) || PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] || a.order - b.order);
   return AGENDA_GROUPS.map((g) => ({ ...g, tasks: open.filter((t) => agendaGroup(t, today) === g.key) })).filter((g) => g.tasks.length);
+}
+
+/** Next due date (yyyy-mm-dd) for a recurring task, advanced from `due`. Weekdays skips Sat/Sun; monthly clamps to month end. */
+export function nextDueDate(due: string, rule: Repeat): string {
+  const [y, m, d] = due.split("-").map(Number);
+  const fmt = (dt: Date) => `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
+  if (rule === "monthly") {
+    const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(); // days in the next month
+    return fmt(new Date(Date.UTC(y, m, Math.min(d, last))));
+  }
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + (rule === "weekly" ? 7 : 1));
+  if (rule === "weekdays") while (dt.getUTCDay() === 0 || dt.getUTCDay() === 6) dt.setUTCDate(dt.getUTCDate() + 1);
+  return fmt(dt);
 }

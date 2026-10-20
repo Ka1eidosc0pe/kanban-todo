@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { createSeed } from "./seed";
 import { STORAGE_KEY, loadData, saveData, stashUnreadable } from "./storage";
+import { nextDueDate } from "./taskUtils";
 import type { AppData, Category, Prefs, Status, Task } from "./types";
 
 const SAVE_DELAY = 300; // ms; saves are batched (trailing)
@@ -120,6 +121,25 @@ function nextOrder(tasks: Task[]) {
   return tasks.reduce((m, t) => Math.max(m, t.order), -1) + 1;
 }
 
+/**
+ * When a recurring main task has just become completed, append its next occurrence (fresh "created" copies of
+ * its subtasks too) and mark it spawned. Ids are derived, not random, so the reducer stays pure (it also runs
+ * outside React to build undo records) and undoing the completion cleanly removes the copies.
+ */
+function spawnNext(tasks: Task[], prev: Task, cur: Task, now: number): Task[] {
+  if (prev.status === "completed" || cur.status !== "completed" || cur.parentId || !cur.repeat || !cur.dueDate || cur.spawnedNext) return tasks;
+  const dueDate = nextDueDate(cur.dueDate, cur.repeat);
+  const base = cur.id.startsWith("r-") ? cur.id.slice(2, 10) : cur.id.slice(0, 8); // stable series prefix
+  let id = `r-${base}-${dueDate}`;
+  while (tasks.some((t) => t.id === id)) id += "x";
+  let order = nextOrder(tasks);
+  const copy: Task = { id, title: cur.title, notes: cur.notes, status: "created", categoryId: cur.categoryId, priority: cur.priority, dueDate, parentId: null, repeat: cur.repeat, order: order++, createdAt: now, updatedAt: now };
+  const subs = tasks
+    .filter((t) => t.parentId === cur.id)
+    .map((s, i): Task => ({ id: `${id}~${i}`, title: s.title, notes: s.notes, status: "created", categoryId: cur.categoryId, priority: s.priority, dueDate: s.dueDate ? nextDueDate(s.dueDate, cur.repeat!) : null, parentId: id, order: order++, createdAt: now, updatedAt: now }));
+  return [...tasks.map((t) => (t.id === cur.id ? { ...t, spawnedNext: true } : t)), copy, ...subs];
+}
+
 function reducer(state: AppData, a: Action): AppData {
   const now = Date.now();
   switch (a.type) {
@@ -147,18 +167,18 @@ function reducer(state: AppData, a: Action): AppData {
       const target = state.tasks.find((t) => t.id === a.id);
       if (!target) return state;
       const { categoryId, ...rest } = a.patch;
+      if (target.parentId !== null) delete rest.repeat; // subtasks never repeat
       // category: subtasks can't change it; a parent's change cascades to its subtasks
       const cat = target.parentId === null ? categoryId : undefined;
       const archiveSubs = target.parentId === null && rest.status === "archived" && target.status !== "archived";
-      return {
-        ...state,
-        tasks: state.tasks.map((t) => {
-          if (t.id === a.id) return { ...t, ...rest, ...(cat ? { categoryId: cat } : {}), updatedAt: now };
-          if (t.parentId !== a.id) return t;
-          const sub = { ...t, ...(cat && t.categoryId !== cat ? { categoryId: cat } : {}), ...(archiveSubs ? { status: "archived" as const } : {}) };
-          return sub.categoryId !== t.categoryId || sub.status !== t.status ? { ...sub, updatedAt: now } : t;
-        }),
-      };
+      const updated: Task = { ...target, ...rest, ...(cat ? { categoryId: cat } : {}), updatedAt: now };
+      const tasks = state.tasks.map((t) => {
+        if (t.id === a.id) return updated;
+        if (t.parentId !== a.id) return t;
+        const sub = { ...t, ...(cat && t.categoryId !== cat ? { categoryId: cat } : {}), ...(archiveSubs ? { status: "archived" as const } : {}) };
+        return sub.categoryId !== t.categoryId || sub.status !== t.status ? { ...sub, updatedAt: now } : t;
+      });
+      return { ...state, tasks: spawnNext(tasks, target, updated, now) };
     }
     case "bulkUpdate": // same rules as updateTask per task (subtasks follow their parent's category, archiving cascades)
       return a.ids.reduce((s, id) => reducer(s, { type: "updateTask", id, patch: a.patch }), state);
@@ -185,12 +205,12 @@ function reducer(state: AppData, a: Action): AppData {
       // `order` follows array position so list order is stable
       return {
         ...state,
-        tasks: ordered.map((t, i) => ({
+        tasks: spawnNext(ordered.map((t, i) => ({
           ...(t.parentId === a.id && (cascade || (archiveSubs && t.status !== "archived"))
             ? { ...t, ...(cascade ? { categoryId: updated.categoryId } : {}), ...(archiveSubs ? { status: "archived" as const } : {}), updatedAt: now }
             : t),
           order: i,
-        })),
+        })), moving, updated, now),
       };
     }
     case "addCategory":
@@ -237,6 +257,8 @@ interface Store {
   /** Revert one undoable action (default: the latest) without touching unrelated changes. */
   undo: (id?: number) => void;
   canUndo: boolean;
+  /** The recurring-task occurrence spawned by the latest dispatch (cleared on read), for "next one due" toasts. */
+  takeSpawned: () => Task | null;
   resetAll: () => void;
   /** Increments each time another tab's changes were loaded. */
   syncTick: number;
@@ -332,14 +354,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  const spawned = useRef<Task | null>(null);
+  const noteSpawn = (before: AppData, after: AppData) => {
+    const known = new Set(before.tasks.map((t) => t.id));
+    spawned.current = after.tasks.length > before.tasks.length ? (after.tasks.find((t) => !known.has(t.id) && !t.parentId && t.repeat) ?? null) : null;
+  };
+  const takeSpawned = useCallback(() => {
+    const t = spawned.current;
+    spawned.current = null;
+    return t;
+  }, []);
   const dispatch = useCallback((a: Action) => {
-    dataRef.current = reducer(dataRef.current, a); // keep the ref current for same-tick dispatches
+    const before = dataRef.current;
+    dataRef.current = reducer(before, a); // keep the ref current for same-tick dispatches
+    noteSpawn(before, dataRef.current);
     rawDispatch(a);
   }, []);
   const dispatchUndoable = useCallback((a: Action) => {
     const before = dataRef.current;
     const after = reducer(before, a);
     dataRef.current = after;
+    noteSpawn(before, after);
     const id = nextUndoId.current++;
     history.current = [...history.current.slice(-19), { id, record: makeRecord(before, after, a) }];
     setHistoryLen(history.current.length);
@@ -362,8 +397,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<Store>(
-    () => ({ ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, canUndo: historyLen > 0, resetAll, syncTick, saveFailed, loadedUnreadable: unreadable }),
-    [ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, historyLen, resetAll, syncTick, saveFailed, unreadable],
+    () => ({ ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, canUndo: historyLen > 0, takeSpawned, resetAll, syncTick, saveFailed, loadedUnreadable: unreadable }),
+    [ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, historyLen, takeSpawned, resetAll, syncTick, saveFailed, unreadable],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

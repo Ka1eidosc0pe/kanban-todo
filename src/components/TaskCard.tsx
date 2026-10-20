@@ -119,7 +119,10 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
         className,
       )}
     >
-      <p className={cn("text-sm font-semibold leading-snug text-slate-900", done && "text-slate-500 line-through")}>{task.title}</p>
+      <p className={cn("text-sm font-semibold leading-snug text-slate-900", done && "text-slate-500 line-through")}>
+        {task.title}
+        {task.repeat && <span className="ml-1.5 text-xs font-normal text-slate-400" title={`Repeats ${task.repeat}`} aria-label={`Repeats ${task.repeat}`}>↻</span>}
+      </p>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {view === "category" ? (
           <Badge tone={STATUS_TONE[task.status]}>{STATUS_LABELS[task.status as Status]}</Badge>

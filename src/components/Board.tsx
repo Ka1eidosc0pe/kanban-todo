@@ -24,6 +24,7 @@ import { Column, type ColumnProps } from "./Column";
 import { FilterPopover } from "./FilterPopover";
 import { FirstRunEmpty } from "./FirstRunEmpty";
 import { TaskCard } from "./TaskCard";
+import { useSpawnToast } from "./useSpawnToast";
 import { DUE_FILTER_LABELS, QUICK_FILTER_LABELS, SORT_LABELS, activeFilterCount, matchesFilters, matchesQuery, matchesQuick, sortTasks, subtaskProgressMap, toggleDonePatch, type QuickFilter } from "@/lib/taskUtils";
 import { useStore } from "@/lib/store";
 import { CATEGORY_COLORS, DEFAULT_FILTERS, STATUSES, STATUS_LABELS, type BoardView, type SortMode, type Status, type Task } from "@/lib/types";
@@ -99,6 +100,7 @@ function SortableColumn({ sortKey, sortable, ...props }: ColumnProps & { sortKey
 export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilterChange }: BoardProps) {
   const { data, dispatch, dispatchUndoable, undo } = useStore();
   const { toast } = useToast();
+  const announceSpawn = useSpawnToast();
   const { view, query, showArchived, filters, sort, collapsed, wipLimit } = data.prefs;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -186,6 +188,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
   const bulkStatus = (status: Status) => {
     const id = dispatchUndoable({ type: "bulkUpdate", ids: selIds, patch: { status } });
     undoToast(`Moved ${plural(selIds.length)} to ${STATUS_LABELS[status]}`, id);
+    announceSpawn(id);
     clearSelection();
   };
   const bulkCategory = (categoryId: string) => {
@@ -264,12 +267,20 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       const id = dispatchUndoable(action);
       const n = col.target.status === "archived" && !moving.parentId ? data.tasks.filter((t) => t.parentId === moving.id && t.status !== "archived").length : 0;
       toast({ message: `Moved to ${col.title}${n ? ` with ${n} subtask${n > 1 ? "s" : ""}` : ""}`, action: { label: "Undo", onClick: () => undo(id) } });
+      announceSpawn(id);
     } else {
       dispatch(action);
     }
   };
 
-  const toggleDone = useCallback((t: Task) => dispatch({ type: "updateTask", id: t.id, patch: toggleDonePatch(t) }), [dispatch]);
+  const toggleDone = useCallback(
+    (t: Task) => {
+      const action = { type: "updateTask" as const, id: t.id, patch: toggleDonePatch(t) };
+      if (t.repeat && t.status !== "completed") announceSpawn(dispatchUndoable(action)); // may spawn the next occurrence: offer undo
+      else dispatch(action);
+    },
+    [dispatch, dispatchUndoable, announceSpawn],
+  );
 
   // Inline add: lands at the end of its column; not registered as "fresh", so it is never auto-discarded.
   const addInline = (target: { status?: Status; categoryId?: string }, title: string) => {

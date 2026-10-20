@@ -66,6 +66,7 @@ export function AgendaView({ tasks, byId, catById, filtered, onOpen, onToggleDon
                           className="block max-w-full truncate rounded text-left text-sm font-medium text-slate-900 hover:underline focus-visible:outline-2 focus-visible:outline-indigo-500"
                         >
                           {t.title}
+                          {t.repeat && <span className="ml-1.5 text-xs font-normal text-slate-400" aria-label={`Repeats ${t.repeat}`}>↻</span>}
                         </button>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           {parent && (
