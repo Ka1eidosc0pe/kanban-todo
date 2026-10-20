@@ -6,6 +6,7 @@ import { Board } from "./Board";
 import { CoachTour } from "./CoachTour";
 import { Header } from "./Header";
 import { HeaderMenu } from "./HeaderMenu";
+import { RecoveryBanner } from "./RecoveryBanner";
 import { SampleBanner } from "./SampleBanner";
 import { TaskDrawer } from "./TaskDrawer";
 import { WelcomeBack } from "./WelcomeBack";
@@ -139,6 +140,7 @@ export function BoardPage() {
         menuSlot={<HeaderMenu />}
         searchRef={searchRef}
       />
+      {ready && <RecoveryBanner />}
       {ready && <SampleBanner />}
       {ready && <WelcomeBack active={quick} onPick={setQuick} />}
       <main className="flex min-h-0 flex-1 flex-col">

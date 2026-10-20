@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { createSeed } from "./seed";
-import { STORAGE_KEY, loadData, saveData } from "./storage";
+import { STORAGE_KEY, loadData, saveData, stashUnreadable } from "./storage";
 import type { AppData, Category, Prefs, Status, Task } from "./types";
 
 const SAVE_DELAY = 300; // ms; saves are batched (trailing)
@@ -219,6 +219,8 @@ interface Store {
   syncTick: number;
   /** True while the latest save failed (e.g. storage full). */
   saveFailed: boolean;
+  /** True when saved data couldn't be read at load (a copy was kept; a fresh board was started). */
+  loadedUnreadable: boolean;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -231,6 +233,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [historyLen, setHistoryLen] = useState(0);
   const [syncTick, setSyncTick] = useState(0);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [unreadable, setUnreadable] = useState(false);
   const externalRef = useRef<AppData | null>(null); // data just loaded from another tab: don't write it back
   const pendingRef = useRef<AppData | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -249,12 +252,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   dataRef.current = data;
 
   useEffect(() => {
-    const saved = loadData();
+    const res = loadData();
     /* eslint-disable react-hooks/set-state-in-effect -- one-time hydration from localStorage */
-    if (saved) {
+    if (res.kind === "ok") {
+      const saved = res.data;
       setPrev(saved.prefs.lastVisit);
       rawDispatch({ type: "hydrate", data: { ...saved, prefs: { ...saved.prefs, lastVisit: Date.now() } } });
     } else {
+      if (res.kind === "unreadable") {
+        stashUnreadable(res.raw); // before any save can overwrite it
+        setUnreadable(true);
+      }
       setFirst(true);
       rawDispatch({ type: "setPrefs", patch: { lastVisit: Date.now() } }); // so the next visit has a "last visit"
     }
@@ -287,8 +295,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY || e.storageArea !== window.localStorage) return;
-      const next = loadData();
-      if (!next) return;
+      const res = loadData();
+      if (res.kind !== "ok") return; // ignore empty/unreadable payloads
+      const next = res.data;
       history.current = [];
       setHistoryLen(0);
       externalRef.current = next;
@@ -330,8 +339,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<Store>(
-    () => ({ ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, canUndo: historyLen > 0, resetAll, syncTick, saveFailed }),
-    [ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, historyLen, resetAll, syncTick, saveFailed],
+    () => ({ ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, canUndo: historyLen > 0, resetAll, syncTick, saveFailed, loadedUnreadable: unreadable }),
+    [ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, historyLen, resetAll, syncTick, saveFailed, unreadable],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
