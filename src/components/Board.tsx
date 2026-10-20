@@ -27,7 +27,7 @@ import { ProgressStrip } from "./ProgressStrip";
 import { TaskCard } from "./TaskCard";
 import { useSpawnToast } from "./useSpawnToast";
 import { DUE_FILTER_LABELS, QUICK_FILTER_LABELS, SORT_LABELS, activeFilterCount, matchesFilters, matchesQuery, matchesQuick, sortTasks, subtaskProgressMap, toggleDonePatch, type QuickFilter } from "@/lib/taskUtils";
-import { useStore } from "@/lib/store";
+import { uid, useStore } from "@/lib/store";
 import { CATEGORY_COLORS, DEFAULT_FILTERS, STATUSES, STATUS_LABELS, type BoardView, type SortMode, type Status, type Task } from "@/lib/types";
 
 const STATUS_DOT: Record<Status, string> = {
@@ -286,7 +286,19 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
   // Inline add: lands at the end of its column; not registered as "fresh", so it is never auto-discarded.
   const addInline = (target: { status?: Status; categoryId?: string }, title: string) => {
     const categoryId = target.categoryId ?? data.categories[0]?.id;
-    if (categoryId) dispatch({ type: "addTask", task: { title, categoryId, ...(target.status ? { status: target.status } : {}) } });
+    if (!categoryId) return;
+    const task = { id: uid(), title, categoryId, ...(target.status ? { status: target.status } : {}) };
+    dispatch({ type: "addTask", task });
+    // a brand-new task has default fields, so check it against the active search/filters
+    const probe: Task = { notes: "", status: "created", priority: "medium", dueDate: null, parentId: null, order: 0, createdAt: 0, updatedAt: 0, ...task };
+    if (!(matchesQuery(probe, query) && matchesQuick(probe, quickFilter) && matchesFilters(probe, filters, view))) {
+      toast({ message: "Added — hidden by current filters", action: { label: "Clear filters", onClick: clearFilters } });
+    }
+  };
+
+  const clearFilters = () => {
+    onQuickFilterChange?.(null);
+    dispatch({ type: "setPrefs", patch: { query: "", filters: DEFAULT_FILTERS } });
   };
 
   const quickAdd = (title: string) => {
@@ -368,10 +380,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => {
-              onQuickFilterChange?.(null);
-              dispatch({ type: "setPrefs", patch: { query: "", filters: DEFAULT_FILTERS } });
-            }}
+            onClick={clearFilters}
           >
             Clear filters
           </Button>
