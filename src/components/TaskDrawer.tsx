@@ -140,7 +140,7 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
 
   return (
     <>
-      <Drawer open onClose={onClose} title={task.title || DEFAULT_TITLE} header={header} footer={footer}>
+      <Drawer open onClose={confirmDelete ? () => {} : onClose} title={task.title || DEFAULT_TITLE} header={header} footer={footer}>
         <div className="flex flex-col gap-4">
           {isSub && parent && (
             <Badge tone="indigo" className="self-start">
