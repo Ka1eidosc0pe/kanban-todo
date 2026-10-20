@@ -141,7 +141,8 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     const action = { type: "moveTask" as const, id: moving.id, beforeId, ...col.target };
     if (changed) {
       const id = dispatchUndoable(action);
-      toast({ message: `Moved to ${col.title}`, action: { label: "Undo", onClick: () => undo(id) } });
+      const n = col.target.status === "archived" && !moving.parentId ? data.tasks.filter((t) => t.parentId === moving.id && t.status !== "archived").length : 0;
+      toast({ message: `Moved to ${col.title}${n ? ` with ${n} subtask${n > 1 ? "s" : ""}` : ""}`, action: { label: "Undo", onClick: () => undo(id) } });
     } else {
       dispatch(action);
     }

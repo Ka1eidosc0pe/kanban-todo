@@ -81,7 +81,8 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
 
   const archive = () => {
     const id = dispatchUndoable({ type: "updateTask", id: task.id, patch: { status: "archived" } });
-    toast({ message: `Archived "${task.title}"`, action: { label: "Undo", onClick: () => undo(id) } });
+    const n = subtasks.filter((s) => s.status !== "archived").length;
+    toast({ message: `Archived "${task.title}"${n ? ` and ${n} subtask${n > 1 ? "s" : ""}` : ""}`, action: { label: "Undo", onClick: () => undo(id) } });
     onClose();
   };
 

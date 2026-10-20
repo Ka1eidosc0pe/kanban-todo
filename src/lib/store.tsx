@@ -136,12 +136,14 @@ function reducer(state: AppData, a: Action): AppData {
       const { categoryId, ...rest } = a.patch;
       // category: subtasks can't change it; a parent's change cascades to its subtasks
       const cat = target.parentId === null ? categoryId : undefined;
+      const archiveSubs = target.parentId === null && rest.status === "archived" && target.status !== "archived";
       return {
         ...state,
         tasks: state.tasks.map((t) => {
           if (t.id === a.id) return { ...t, ...rest, ...(cat ? { categoryId: cat } : {}), updatedAt: now };
-          if (cat && t.parentId === a.id && t.categoryId !== cat) return { ...t, categoryId: cat, updatedAt: now };
-          return t;
+          if (t.parentId !== a.id) return t;
+          const sub = { ...t, ...(cat && t.categoryId !== cat ? { categoryId: cat } : {}), ...(archiveSubs ? { status: "archived" as const } : {}) };
+          return sub.categoryId !== t.categoryId || sub.status !== t.status ? { ...sub, updatedAt: now } : t;
         }),
       };
     }
@@ -158,13 +160,16 @@ function reducer(state: AppData, a: Action): AppData {
         updatedAt: now,
       };
       const cascade = !moving.parentId && updated.categoryId !== moving.categoryId;
+      const archiveSubs = !moving.parentId && updated.status === "archived" && moving.status !== "archived";
       const idx = a.beforeId ? rest.findIndex((t) => t.id === a.beforeId) : -1;
       const ordered = idx === -1 ? [...rest, updated] : [...rest.slice(0, idx), updated, ...rest.slice(idx)];
       // `order` follows array position so list order is stable
       return {
         ...state,
         tasks: ordered.map((t, i) => ({
-          ...(cascade && t.parentId === a.id ? { ...t, categoryId: updated.categoryId, updatedAt: now } : t),
+          ...(t.parentId === a.id && (cascade || (archiveSubs && t.status !== "archived"))
+            ? { ...t, ...(cascade ? { categoryId: updated.categoryId } : {}), ...(archiveSubs ? { status: "archived" as const } : {}), updatedAt: now }
+            : t),
           order: i,
         })),
       };
