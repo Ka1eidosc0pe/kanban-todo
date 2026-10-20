@@ -1,5 +1,5 @@
 import { addDaysISO } from "./taskUtils";
-import type { AppData, Category, Task } from "./types";
+import { DEFAULT_FILTERS, type AppData, type Category, type Task } from "./types";
 
 export function createSeed(): AppData {
   const now = Date.now();
@@ -35,6 +35,6 @@ export function createSeed(): AppData {
     categories,
     tasks,
     isSample: true,
-    prefs: { view: "status", showArchived: false, query: "", tourDone: false, lastVisit: null },
+    prefs: { view: "status", showArchived: false, query: "", filters: DEFAULT_FILTERS, sort: "manual", tourDone: false, lastVisit: null },
   };
 }

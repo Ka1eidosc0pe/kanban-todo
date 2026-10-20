@@ -1,5 +1,5 @@
 import { createSeed } from "./seed";
-import type { AppData, Task } from "./types";
+import { DEFAULT_FILTERS, type AppData, type Task } from "./types";
 
 export const STORAGE_KEY = "kanban-todo:v1";
 
@@ -34,7 +34,11 @@ function migrate(parsed: unknown): AppData | null {
       updatedAt: now,
       ...t,
     }) as Task),
-    prefs: { ...createSeed().prefs, ...prefs },
+    prefs: {
+      ...createSeed().prefs,
+      ...prefs,
+      filters: { ...DEFAULT_FILTERS, ...(isObj(prefs.filters) ? prefs.filters : {}) },
+    },
     isSample: parsed.isSample === true,
   };
 }

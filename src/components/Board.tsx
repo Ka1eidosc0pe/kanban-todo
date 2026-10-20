@@ -15,14 +15,15 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Badge, Button, useToast } from "@/components/ui";
+import { Badge, Button, Select, useToast } from "@/components/ui";
 import { CategoryManager, type CategoryDialog } from "./CategoryManager";
 import { Column } from "./Column";
+import { FilterPopover } from "./FilterPopover";
 import { FirstRunEmpty } from "./FirstRunEmpty";
 import { TaskCard } from "./TaskCard";
-import { QUICK_FILTER_LABELS, matchesQuery, matchesQuick, subtaskProgressMap, toggleDonePatch, type QuickFilter } from "@/lib/taskUtils";
+import { DUE_FILTER_LABELS, QUICK_FILTER_LABELS, SORT_LABELS, activeFilterCount, matchesFilters, matchesQuery, matchesQuick, sortTasks, subtaskProgressMap, toggleDonePatch, type QuickFilter } from "@/lib/taskUtils";
 import { useStore } from "@/lib/store";
-import { CATEGORY_COLORS, STATUSES, STATUS_LABELS, type Status, type Task } from "@/lib/types";
+import { CATEGORY_COLORS, DEFAULT_FILTERS, STATUSES, STATUS_LABELS, type SortMode, type Status, type Task } from "@/lib/types";
 
 const STATUS_DOT: Record<Status, string> = {
   created: "bg-slate-400",
@@ -71,7 +72,7 @@ function SortableCard({ task, children }: { task: Task; children: (p: React.Comp
 export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilterChange }: BoardProps) {
   const { data, dispatch, dispatchUndoable, undo } = useStore();
   const { toast } = useToast();
-  const { view, query, showArchived } = data.prefs;
+  const { view, query, showArchived, filters, sort } = data.prefs;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [catDialog, setCatDialog] = useState<CategoryDialog>(null);
 
@@ -86,9 +87,12 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
   const catById = useMemo(() => new Map(data.categories.map((c) => [c.id, c])), [data.categories]);
 
   const columns = useMemo<ColumnDef[]>(() => {
-    const visible = data.tasks
-      .filter((t) => matchesQuery(t, query) && matchesQuick(t, quickFilter) && (showArchived || t.status !== "archived"))
-      .sort((a, b) => a.order - b.order);
+    const visible = sortTasks(
+      data.tasks
+        .filter((t) => matchesQuery(t, query) && matchesQuick(t, quickFilter) && matchesFilters(t, filters, view) && (showArchived || t.status !== "archived"))
+        .sort((a, b) => a.order - b.order),
+      sort,
+    );
     if (view === "status") {
       return STATUSES.filter((s) => s !== "archived" || showArchived).map((s) => ({
         key: s,
@@ -105,7 +109,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       target: { categoryId: c.id },
       tasks: visible.filter((t) => t.categoryId === c.id),
     }));
-  }, [data.tasks, data.categories, view, query, quickFilter, showArchived]);
+  }, [data.tasks, data.categories, view, query, quickFilter, showArchived, filters, sort]);
 
   const columnOf = (t: Task) => (view === "status" ? t.status : t.categoryId);
   const active = activeId ? byId.get(activeId) : undefined;
@@ -129,16 +133,22 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       if (!overTask) return;
       if (overTask.id === moving.id) return;
       colKey = columnOf(overTask);
-      const list = columns.find((c) => c.key === colKey)?.tasks ?? [];
-      const overIdx = list.findIndex((t) => t.id === overTask.id);
-      const fromIdx = list.findIndex((t) => t.id === moving.id);
-      // moving down inside the same column lands after the hovered card
-      beforeId = fromIdx !== -1 && fromIdx < overIdx ? (list[overIdx + 1]?.id ?? null) : overTask.id;
+      if (sort !== "manual") {
+        // sorted display: no reordering within a column; cross-column drops just append
+        if (colKey === columnOf(moving)) return;
+      } else {
+        const list = columns.find((c) => c.key === colKey)?.tasks ?? [];
+        const overIdx = list.findIndex((t) => t.id === overTask.id);
+        const fromIdx = list.findIndex((t) => t.id === moving.id);
+        // moving down inside the same column lands after the hovered card
+        beforeId = fromIdx !== -1 && fromIdx < overIdx ? (list[overIdx + 1]?.id ?? null) : overTask.id;
+      }
     }
 
     const col = columns.find((c) => c.key === colKey);
     if (!col) return;
     const changed = columnOf(moving) !== colKey;
+    if (!changed && sort !== "manual") return;
     if (changed && view === "category" && moving.parentId) {
       toast("Subtasks follow their parent's category");
       return;
@@ -165,7 +175,8 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     const categoryId = data.categories[0]?.id;
     if (categoryId) dispatch({ type: "addTask", task: { title, categoryId } });
   };
-  const filtered = !!query.trim() || !!quickFilter;
+  const filterCount = activeFilterCount(filters, view);
+  const filtered = !!query.trim() || !!quickFilter || filterCount > 0;
 
   const renderCard = (t: Task, extra?: React.ComponentProps<typeof TaskCard>) => (
     <TaskCard
@@ -185,11 +196,21 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-4 pb-2 pt-4 sm:px-6">
         <p className="text-sm text-slate-500">
           {view === "status" ? "Drag cards to change their status." : "Drag cards to change their category."}
+          {sort !== "manual" && ` Sorted by ${SORT_LABELS[sort].toLowerCase()}: reordering within a column is off (switch to Manual to reorder).`}
         </p>
         <div className="flex items-center gap-3">
         {view === "category" && (
           <Button size="sm" onClick={() => setCatDialog({ kind: "manage" })}>Manage categories</Button>
         )}
+        <Select
+          label="Sort"
+          hideLabel
+          value={sort}
+          onChange={(e) => dispatch({ type: "setPrefs", patch: { sort: e.target.value as SortMode } })}
+          options={(Object.keys(SORT_LABELS) as SortMode[]).map((m) => ({ value: m, label: `Sort: ${SORT_LABELS[m]}` }))}
+          className="h-8 w-36 text-xs"
+        />
+        <FilterPopover view={view} categories={data.categories} filters={filters} onChange={(f) => dispatch({ type: "setPrefs", patch: { filters: f } })} />
         <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
           <input
             type="checkbox"
@@ -206,12 +227,17 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
           <span className="text-sm text-slate-500">Filtered:</span>
           {quickFilter && <Badge tone="indigo">{QUICK_FILTER_LABELS[quickFilter]}</Badge>}
           {query.trim() && <Badge tone="indigo">“{query.trim()}”</Badge>}
+          {filters.priorities.length > 0 && <Badge tone="indigo">Priority: {filters.priorities.join(", ")}</Badge>}
+          {view === "status" && filters.categoryIds.length > 0 && (
+            <Badge tone="indigo">Category: {filters.categoryIds.map((id) => catById.get(id)?.name ?? "?").join(", ")}</Badge>
+          )}
+          {filters.due !== "any" && <Badge tone="indigo">{DUE_FILTER_LABELS[filters.due]}</Badge>}
           <Button
             size="sm"
             variant="ghost"
             onClick={() => {
               onQuickFilterChange?.(null);
-              dispatch({ type: "setPrefs", patch: { query: "" } });
+              dispatch({ type: "setPrefs", patch: { query: "", filters: DEFAULT_FILTERS } });
             }}
           >
             Clear filters
@@ -232,6 +258,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
               taskIds={c.tasks.map((t) => t.id)}
               onAdd={() => onAddTask(c.target)}
               onQuickAdd={(title) => addInline(c.target, title)}
+              reorderable={sort === "manual"}
               emptyText={filtered ? "No matching cards" : "Drop a card here"}
             >
               {c.tasks.map((t) => (

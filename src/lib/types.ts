@@ -33,10 +33,22 @@ export interface Task {
   updatedAt: number;
 }
 
+export type DueFilter = "any" | "overdue" | "today" | "week" | "none";
+export type SortMode = "manual" | "due" | "priority";
+
+export interface Filters {
+  priorities: Priority[]; // empty = any
+  categoryIds: string[]; // empty = any (Status view only)
+  due: DueFilter;
+}
+export const DEFAULT_FILTERS: Filters = { priorities: [], categoryIds: [], due: "any" };
+
 export interface Prefs {
   view: ViewMode;
   showArchived: boolean;
   query: string;
+  filters: Filters;
+  sort: SortMode;
   tourDone: boolean;
   lastVisit: number | null;
 }

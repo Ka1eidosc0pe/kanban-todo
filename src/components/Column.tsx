@@ -17,10 +17,15 @@ export interface ColumnProps {
   /** Footer: create a task with this title in this column (inline input). */
   onQuickAdd?: (title: string) => void;
   emptyText?: string;
+  /** False while the board is sorted: no reordering within the column. */
+  reorderable?: boolean;
   children: React.ReactNode;
 }
 
-export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, onQuickAdd, emptyText = "Drop a card here", children }: ColumnProps) {
+/** Sorting strategy that never shifts siblings (drop positions are meaningless when sorted). */
+const noShift = () => null;
+
+export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, onQuickAdd, emptyText = "Drop a card here", reorderable = true, children }: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const headingId = `${id}-heading`;
   const [adding, setAdding] = useState(false);
@@ -54,7 +59,7 @@ export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, o
         ref={setNodeRef}
         className={cn("flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2 transition-colors", isOver && "rounded-xl bg-indigo-50/70")}
       >
-        <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+        <SortableContext items={taskIds} strategy={reorderable ? verticalListSortingStrategy : noShift}>
           {taskIds.length === 0 ? <EmptyState compact title={emptyText} icon="⇣" className="bg-white/50" /> : children}
         </SortableContext>
       </div>

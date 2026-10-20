@@ -1,4 +1,4 @@
-import type { Task } from "./types";
+import type { DueFilter, Filters, Priority, SortMode, Task, ViewMode } from "./types";
 
 /** Patch for the done checkbox: remembers the prior status and restores it on uncheck. */
 export function toggleDonePatch(t: Task): Partial<Task> {
@@ -112,4 +112,50 @@ export function timeAgo(ts: number, now = Date.now()): string {
     }
   }
   return "just now";
+}
+
+export const DUE_FILTER_LABELS: Record<DueFilter, string> = {
+  any: "Any time",
+  overdue: "Overdue",
+  today: "Due today",
+  week: "Due this week",
+  none: "No due date",
+};
+export const SORT_LABELS: Record<SortMode, string> = { manual: "Manual", due: "Due date", priority: "Priority" };
+
+/** Category filtering only applies in Status view (in Category view the columns are the categories). */
+export function activeFilterCount(f: Filters, view: ViewMode): number {
+  return (f.priorities.length ? 1 : 0) + (view === "status" && f.categoryIds.length ? 1 : 0) + (f.due !== "any" ? 1 : 0);
+}
+
+export function matchesFilters(task: Task, f: Filters, view: ViewMode, today = todayISO()): boolean {
+  if (f.priorities.length && !f.priorities.includes(task.priority)) return false;
+  if (view === "status" && f.categoryIds.length && !f.categoryIds.includes(task.categoryId)) return false;
+  switch (f.due) {
+    case "overdue":
+      return isOverdue(task, today);
+    case "today":
+      return task.dueDate === today;
+    case "week": // today through the next 6 days
+      return !!task.dueDate && task.dueDate >= today && task.dueDate <= addDaysISO(6);
+    case "none":
+      return !task.dueDate;
+    default:
+      return true;
+  }
+}
+
+const PRIORITY_RANK: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
+
+/** Stable sort (ties keep manual order); "manual" returns the list unchanged. */
+export function sortTasks(tasks: Task[], sort: SortMode): Task[] {
+  if (sort === "manual") return tasks;
+  const key = (t: Task) => (sort === "priority" ? PRIORITY_RANK[t.priority] : 0);
+  return [...tasks].sort((a, b) => {
+    if (sort === "due") {
+      if (a.dueDate !== b.dueDate) return !a.dueDate ? 1 : !b.dueDate ? -1 : a.dueDate < b.dueDate ? -1 : 1; // no date last
+      return 0;
+    }
+    return key(a) - key(b);
+  });
 }
