@@ -66,12 +66,6 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
     }
   };
 
-  const changeCategory = (categoryId: string) => {
-    patch({ categoryId });
-    // keep subtasks in the same category as their parent
-    subtasks.forEach((s) => dispatch({ type: "updateTask", id: s.id, patch: { categoryId } }));
-  };
-
   const toggleSub = (sub: Task) => {
     const completing = sub.status !== "completed";
     dispatch({ type: "updateTask", id: sub.id, patch: { status: completing ? "completed" : "created" } });
@@ -165,7 +159,7 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
             <Select
               label="Category"
               value={task.categoryId}
-              onChange={(e) => changeCategory(e.target.value)}
+              onChange={(e) => patch({ categoryId: e.target.value })}
               options={data.categories.map((c) => ({ value: c.id, label: c.name }))}
               disabled={isSub}
               hint={isSub ? "Follows the parent task" : undefined}

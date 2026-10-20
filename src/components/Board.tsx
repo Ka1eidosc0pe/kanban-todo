@@ -134,6 +134,10 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     const col = columns.find((c) => c.key === colKey);
     if (!col) return;
     const changed = columnOf(moving) !== colKey;
+    if (changed && view === "category" && moving.parentId) {
+      toast("Subtasks follow their parent's category");
+      return;
+    }
     const action = { type: "moveTask" as const, id: moving.id, beforeId, ...col.target };
     if (changed) {
       const id = dispatchUndoable(action);

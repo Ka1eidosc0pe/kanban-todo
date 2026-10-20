@@ -114,6 +114,7 @@ function reducer(state: AppData, a: Action): AppData {
     case "restore":
       return a.data;
     case "addTask": {
+      const parent = a.task.parentId ? state.tasks.find((t) => t.id === a.task.parentId) : undefined;
       const task: Task = {
         id: a.task.id ?? uid(),
         notes: "",
@@ -125,11 +126,25 @@ function reducer(state: AppData, a: Action): AppData {
         createdAt: now,
         updatedAt: now,
         ...a.task,
+        ...(parent ? { categoryId: parent.categoryId } : {}), // subtasks follow their parent
       };
       return { ...state, tasks: [...state.tasks, task] };
     }
-    case "updateTask":
-      return { ...state, tasks: state.tasks.map((t) => (t.id === a.id ? { ...t, ...a.patch, updatedAt: now } : t)) };
+    case "updateTask": {
+      const target = state.tasks.find((t) => t.id === a.id);
+      if (!target) return state;
+      const { categoryId, ...rest } = a.patch;
+      // category: subtasks can't change it; a parent's change cascades to its subtasks
+      const cat = target.parentId === null ? categoryId : undefined;
+      return {
+        ...state,
+        tasks: state.tasks.map((t) => {
+          if (t.id === a.id) return { ...t, ...rest, ...(cat ? { categoryId: cat } : {}), updatedAt: now };
+          if (cat && t.parentId === a.id && t.categoryId !== cat) return { ...t, categoryId: cat, updatedAt: now };
+          return t;
+        }),
+      };
+    }
     case "deleteTask": // removes the task and its subtasks
       return { ...state, tasks: state.tasks.filter((t) => t.id !== a.id && t.parentId !== a.id) };
     case "moveTask": {
@@ -139,13 +154,20 @@ function reducer(state: AppData, a: Action): AppData {
       const updated: Task = {
         ...moving,
         status: a.status ?? moving.status,
-        categoryId: a.categoryId ?? moving.categoryId,
+        categoryId: moving.parentId ? moving.categoryId : (a.categoryId ?? moving.categoryId), // subtasks keep their parent's
         updatedAt: now,
       };
+      const cascade = !moving.parentId && updated.categoryId !== moving.categoryId;
       const idx = a.beforeId ? rest.findIndex((t) => t.id === a.beforeId) : -1;
       const ordered = idx === -1 ? [...rest, updated] : [...rest.slice(0, idx), updated, ...rest.slice(idx)];
       // `order` follows array position so list order is stable
-      return { ...state, tasks: ordered.map((t, i) => ({ ...t, order: i })) };
+      return {
+        ...state,
+        tasks: ordered.map((t, i) => ({
+          ...(cascade && t.parentId === a.id ? { ...t, categoryId: updated.categoryId, updatedAt: now } : t),
+          order: i,
+        })),
+      };
     }
     case "addCategory":
       return { ...state, categories: [...state.categories, a.category] };
