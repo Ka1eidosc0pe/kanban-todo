@@ -207,3 +207,44 @@ export const completedTime = (t: Task) => t.completedAt ?? t.updatedAt;
 export function staleCompletedIds(tasks: Task[], days: number, now = Date.now()): string[] {
   return tasks.filter((t) => t.status === "completed" && !t.parentId && completedTime(t) < now - days * DAY_MS).map((t) => t.id);
 }
+
+/** When a task was completed, if it counts as done (archived tasks only count when `completedAt` was recorded). */
+const doneTime = (t: Task): number | undefined => t.completedAt ?? (t.status === "completed" ? t.updatedAt : undefined);
+
+const localISO = (ms: number) => {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+/** Local midnight of the Monday that starts the week containing `now`. */
+export function weekStart(now = Date.now()): number {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getTime();
+}
+
+export function doneThisWeek(tasks: Task[], now = Date.now()): number {
+  const start = weekStart(now);
+  return tasks.filter((t) => {
+    const at = doneTime(t);
+    return at !== undefined && at >= start;
+  }).length;
+}
+
+/** Consecutive days with at least one completion, ending today or (if nothing yet today) yesterday. */
+export function completionStreak(tasks: Task[], now = Date.now()): number {
+  const days = new Set<string>();
+  for (const t of tasks) {
+    const at = doneTime(t);
+    if (at !== undefined) days.add(localISO(at));
+  }
+  const d = new Date(now);
+  if (!days.has(localISO(d.getTime()))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (days.has(localISO(d.getTime()))) {
+    n++;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}

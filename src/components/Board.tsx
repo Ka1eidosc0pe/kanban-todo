@@ -23,6 +23,7 @@ import { CategoryManager, type CategoryDialog } from "./CategoryManager";
 import { Column, type ColumnProps } from "./Column";
 import { FilterPopover } from "./FilterPopover";
 import { FirstRunEmpty } from "./FirstRunEmpty";
+import { ProgressStrip } from "./ProgressStrip";
 import { TaskCard } from "./TaskCard";
 import { useSpawnToast } from "./useSpawnToast";
 import { DUE_FILTER_LABELS, QUICK_FILTER_LABELS, SORT_LABELS, activeFilterCount, matchesFilters, matchesQuery, matchesQuick, sortTasks, subtaskProgressMap, toggleDonePatch, type QuickFilter } from "@/lib/taskUtils";
@@ -319,10 +320,13 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-4 pb-2 pt-4 sm:px-6">
+        <div className="flex flex-col gap-0.5">
         <p className="text-sm text-slate-500">
           {agenda ? "Open tasks, grouped by when they are due." : view === "status" ? "Drag cards to change their status." : "Drag cards to change their category."}
           {!agenda && sort !== "manual" && ` Sorted by ${SORT_LABELS[sort].toLowerCase()}: reordering within a column is off (switch to Manual to reorder).`}
         </p>
+        <ProgressStrip />
+        </div>
         <div className="flex items-center gap-3">
         {view === "category" && (
           <Button size="sm" onClick={() => setCatDialog({ kind: "manage" })}>Manage categories</Button>
