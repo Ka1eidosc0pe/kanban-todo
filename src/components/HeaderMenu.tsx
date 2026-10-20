@@ -4,11 +4,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Button, IconButton, Modal, useToast } from "@/components/ui";
 import { createSeed } from "@/lib/seed";
 import { useStore } from "@/lib/store";
-import { parseImport } from "@/lib/storage";
-import { todayISO } from "@/lib/taskUtils";
-import type { AppData } from "@/lib/types";
 
-type Confirm = null | { kind: "reset" } | { kind: "import"; data: AppData };
+type Confirm = null | { kind: "reset" };
 
 export function HeaderMenu() {
   const { data, dispatch, dispatchUndoable, undo } = useStore();
@@ -17,7 +14,6 @@ export function HeaderMenu() {
   const [confirm, setConfirm] = useState<Confirm>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const menuId = useId();
 
   useEffect(() => {
@@ -60,50 +56,14 @@ export function HeaderMenu() {
     };
   }, [open]);
 
-  const exportJson = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `kanban-todo-${todayISO()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    toast("Exported your board as JSON");
-  };
-
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    const parsed = parseImport(await file.text());
-    if (!parsed) {
-      toast("That file isn't a valid Kanban To-Do export.");
-      return;
-    }
-    setConfirm({ kind: "import", data: parsed });
-  };
-
   const doConfirm = () => {
     if (!confirm) return;
-    if (confirm.kind === "import") {
-      const seedPrefs = createSeed().prefs;
-      const next: AppData = {
-        ...confirm.data,
-        isSample: false,
-        prefs: { ...seedPrefs, ...confirm.data.prefs, tourDone: true, lastVisit: data.prefs.lastVisit },
-      };
-      const id = dispatchUndoable({ type: "restore", data: next });
-      toast({ message: `Imported ${next.tasks.length} tasks`, action: { label: "Undo", onClick: () => undo(id) } });
-    } else {
-      const seed = createSeed();
-      const id = dispatchUndoable({
-        type: "restore",
-        data: { ...seed, prefs: { ...seed.prefs, tourDone: data.prefs.tourDone, lastVisit: data.prefs.lastVisit } },
-      });
-      toast({ message: "Board reset to sample data", action: { label: "Undo", onClick: () => undo(id) } });
-    }
+    const seed = createSeed();
+    const id = dispatchUndoable({
+      type: "restore",
+      data: { ...seed, prefs: { ...seed.prefs, tourDone: data.prefs.tourDone, lastVisit: data.prefs.lastVisit } },
+    });
+    toast({ message: "Board reset to sample data", action: { label: "Undo", onClick: () => undo(id) } });
     setConfirm(null);
   };
 
@@ -135,33 +95,12 @@ export function HeaderMenu() {
       </IconButton>
       {open && (
         <div id={menuId} role="menu" aria-label="App menu" className="absolute right-0 top-full z-40 mt-1 w-56 rounded-xl bg-white p-1 shadow-lg ring-1 ring-slate-200">
-          <button role="menuitem" type="button" className={item} onClick={() => run(exportJson)}>Export JSON</button>
-          <button role="menuitem" type="button" className={item} onClick={() => run(() => fileRef.current?.click())}>Import JSON…</button>
           <button role="menuitem" type="button" className={item} onClick={() => run(() => dispatch({ type: "setPrefs", patch: { tourDone: false } }))}>Replay tour</button>
           <div role="separator" className="my-1 h-px bg-slate-100" />
           <button role="menuitem" type="button" className={item + " text-rose-700"} onClick={() => run(() => setConfirm({ kind: "reset" }))}>Reset to sample data…</button>
         </div>
       )}
-      <input ref={fileRef} type="file" accept="application/json,.json" className="sr-only" tabIndex={-1} aria-label="Import JSON file" onChange={onFile} />
 
-      <Modal
-        open={confirm?.kind === "import"}
-        onClose={() => setConfirm(null)}
-        title="Replace your board?"
-        description={
-          confirm?.kind === "import"
-            ? `This replaces everything with ${confirm.data.tasks.length} tasks and ${confirm.data.categories.length} categories from the file. You can undo this.`
-            : undefined
-        }
-        footer={
-          <>
-            <Button onClick={() => setConfirm(null)}>Cancel</Button>
-            <Button variant="danger" onClick={doConfirm}>Replace board</Button>
-          </>
-        }
-      >
-        <p className="text-sm text-slate-600">Tip: export first if you want to keep your current board.</p>
-      </Modal>
       <Modal
         open={confirm?.kind === "reset"}
         onClose={() => setConfirm(null)}
@@ -174,7 +113,7 @@ export function HeaderMenu() {
           </>
         }
       >
-        <p className="text-sm text-slate-600">Tip: export first if you want to keep your current board.</p>
+        <span className="sr-only">Confirm reset</span>
       </Modal>
     </div>
   );

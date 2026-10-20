@@ -21,12 +21,3 @@ export function saveData(data: AppData): void {
     /* storage full or unavailable: keep working in memory */
   }
 }
-
-export function parseImport(text: string): AppData | null {
-  try {
-    const parsed = JSON.parse(text) as AppData;
-    return parsed?.version === 1 && Array.isArray(parsed.tasks) && Array.isArray(parsed.categories) ? parsed : null;
-  } catch {
-    return null;
-  }
-}

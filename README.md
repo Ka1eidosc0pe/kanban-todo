@@ -21,7 +21,7 @@ An interactive kanban to-do board with drag-and-drop cards, two ways of grouping
 - **Category view:** Career, College, Personal + create, rename, recolor, delete your own (deleting offers *move tasks* or *delete tasks*, with undo)
 - Tasks with notes, due date and priority
 - Subtasks with their own independent status. They show as compact, dashed-border cards with a parent chip, and can be dragged like any card
-- Search and filters, undo toasts, JSON export/import, keyboard-accessible drag-and-drop
+- Search and filters, undo toasts, keyboard-accessible drag-and-drop
 
 ## User flows
 
@@ -56,7 +56,6 @@ flowchart TD
     CD --> CD2[Delete tasks too, with undo toast]
 
     G --> S[Search and filter]
-    G --> X[Export or import JSON backup]
     G --> R([Close tab. Autosaved.<br/>Return later: back at step B])
 ```
 
@@ -90,7 +89,7 @@ flowchart LR
     BS --> TD[Task drawer]
     BC --> TD
     BC --> CM[Manage categories modal]
-    H --> MENU[Menu: export, import, reset, replay tour]
+    H --> MENU[Menu: reset, replay tour]
     TD -->|Esc / ✕ / back| BS
     TD -->|Esc / ✕ / back| BC
     CM -->|Done| BC
