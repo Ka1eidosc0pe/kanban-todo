@@ -36,7 +36,7 @@ export function FilterPopover({ view, categories, filters, onChange }: { view: V
     };
   }, [open]);
 
-  const check = "h-4 w-4 rounded border-slate-300 accent-indigo-600";
+  const check = "h-4 w-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600 dark:accent-indigo-400";
   return (
     <div ref={wrapRef} className="relative">
       <Button ref={btnRef} size="sm" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={() => setOpen((o) => !o)}>
@@ -44,11 +44,11 @@ export function FilterPopover({ view, categories, filters, onChange }: { view: V
         {count > 0 && <span className="rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white" aria-label={`${count} active`}>{count}</span>}
       </Button>
       {open && (
-        <div id={panelId} role="dialog" aria-label="Filters" data-popover className="absolute right-0 top-full z-40 mt-1 flex w-64 flex-col gap-3 rounded-xl bg-white p-3 shadow-lg ring-1 ring-slate-200">
+        <div id={panelId} role="dialog" aria-label="Filters" data-popover className="absolute right-0 top-full z-40 mt-1 flex w-64 flex-col gap-3 rounded-xl bg-white dark:bg-slate-800 p-3 shadow-lg ring-1 ring-slate-200 dark:ring-slate-700">
           <fieldset className="flex flex-col gap-1.5">
-            <legend className="mb-1 text-xs font-medium text-slate-600">Priority</legend>
+            <legend className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-300">Priority</legend>
             {PRIORITIES.map((p) => (
-              <label key={p} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+              <label key={p} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
                 <input type="checkbox" className={check} checked={filters.priorities.includes(p)} onChange={() => onChange({ ...filters, priorities: toggle(filters.priorities, p) })} />
                 {cap(p)}
               </label>
@@ -56,10 +56,10 @@ export function FilterPopover({ view, categories, filters, onChange }: { view: V
           </fieldset>
           {view !== "category" && (
             <fieldset className="flex flex-col gap-1.5">
-              <legend className="mb-1 text-xs font-medium text-slate-600">Category</legend>
+              <legend className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-300">Category</legend>
               <div className="flex max-h-32 flex-col gap-1.5 overflow-y-auto">
                 {categories.map((c) => (
-                  <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                  <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
                     <input type="checkbox" className={check} checked={filters.categoryIds.includes(c.id)} onChange={() => onChange({ ...filters, categoryIds: toggle(filters.categoryIds, c.id) })} />
                     <span className="truncate">{c.name}</span>
                   </label>
@@ -68,10 +68,10 @@ export function FilterPopover({ view, categories, filters, onChange }: { view: V
             </fieldset>
           )}
           <fieldset className="flex flex-col gap-1.5">
-            <legend className="mb-1 text-xs font-medium text-slate-600">Due</legend>
+            <legend className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-300">Due</legend>
             {(Object.keys(DUE_FILTER_LABELS) as DueFilter[]).map((d) => (
-              <label key={d} className={cn("flex cursor-pointer items-center gap-2 text-sm text-slate-700")}>
-                <input type="radio" name={`${panelId}-due`} className="accent-indigo-600" checked={filters.due === d} onChange={() => onChange({ ...filters, due: d })} />
+              <label key={d} className={cn("flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-200")}>
+                <input type="radio" name={`${panelId}-due`} className="accent-indigo-600 dark:accent-indigo-400" checked={filters.due === d} onChange={() => onChange({ ...filters, due: d })} />
                 {DUE_FILTER_LABELS[d]}
               </label>
             ))}

@@ -18,7 +18,7 @@ export function FirstRunEmpty({ onAddTask, onQuickAdd }: FirstRunEmptyProps) {
         icon={<span className="text-3xl">📝</span>}
         title="Your board is empty. Let's add your first task."
         description="Tasks you add show up in the lists below. Press N any time to add another."
-        className="rounded-2xl bg-white py-8 ring-1 ring-slate-200"
+        className="rounded-2xl bg-white dark:bg-slate-900 py-8 ring-1 ring-slate-200 dark:ring-slate-800"
         action={
           <div className="flex flex-col items-center gap-4">
             <Button variant="primary" size="lg" onClick={onAddTask}>

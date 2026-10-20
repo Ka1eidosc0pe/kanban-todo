@@ -108,10 +108,10 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
     onClose();
   };
 
-  const crumb = "rounded px-1 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-indigo-500";
+  const crumb = "rounded px-1 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400";
   const header = (
     <nav aria-label="Breadcrumb">
-      <ol className="flex flex-wrap items-center gap-x-1 text-xs text-slate-500">
+      <ol className="flex flex-wrap items-center gap-x-1 text-xs text-slate-500 dark:text-slate-400">
         <li>
           <button type="button" className={crumb} onClick={onClose}>Board</button>
         </li>
@@ -132,7 +132,7 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
           </>
         )}
         <li aria-hidden>›</li>
-        <li aria-current="page" className="max-w-[10rem] truncate font-medium text-slate-900">{title || DEFAULT_TITLE}</li>
+        <li aria-current="page" className="max-w-[10rem] truncate font-medium text-slate-900 dark:text-slate-100">{title || DEFAULT_TITLE}</li>
       </ol>
     </nav>
   );
@@ -171,7 +171,7 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
           {showRendered ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <span id="notes-label" className="text-xs font-medium text-slate-600">Notes</span>
+                <span id="notes-label" className="text-xs font-medium text-slate-600 dark:text-slate-300">Notes</span>
                 <Button size="sm" variant="ghost" onClick={() => setEditingNotes(true)}>Edit</Button>
               </div>
               <div
@@ -180,7 +180,7 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
                 title="Click to edit"
                 onClick={(e) => !(e.target as HTMLElement).closest("a,button") && setEditingNotes(true)}
                 onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && setEditingNotes(true)}
-                className="min-h-24 cursor-text rounded-lg bg-white px-3 py-2 ring-1 ring-inset ring-slate-300 hover:ring-slate-400 focus-visible:outline-2 focus-visible:outline-indigo-500"
+                className="min-h-24 cursor-text rounded-lg bg-white dark:bg-slate-800 px-3 py-2 ring-1 ring-inset ring-slate-300 dark:ring-slate-600 hover:ring-slate-400 dark:hover:ring-slate-500 focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400"
               >
                 <Markdown source={task.notes} onToggle={(line) => patch({ notes: toggleChecklistLine(task.notes, line) })} />
               </div>
@@ -284,10 +284,10 @@ function Subtasks({
   };
 
   return (
-    <section aria-labelledby="subtasks-h" className="flex flex-col gap-2 border-t border-slate-100 pt-4">
+    <section aria-labelledby="subtasks-h" className="flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800 pt-4">
       <div className="flex items-center justify-between">
-        <h3 id="subtasks-h" className="text-sm font-semibold text-slate-900">Subtasks</h3>
-        {subtasks.length > 0 && <span className="text-xs text-slate-500">{doneCount}/{subtasks.length} done</span>}
+        <h3 id="subtasks-h" className="text-sm font-semibold text-slate-900 dark:text-slate-100">Subtasks</h3>
+        {subtasks.length > 0 && <span className="text-xs text-slate-500 dark:text-slate-400">{doneCount}/{subtasks.length} done</span>}
       </div>
       {subtasks.length > 0 && (
         <div
@@ -296,7 +296,7 @@ function Subtasks({
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={pct}
-          className="h-1.5 overflow-hidden rounded-full bg-slate-200"
+          className="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"
         >
           <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
         </div>
@@ -345,7 +345,7 @@ function SubtaskRow({
   const [value, setValue] = useState(sub.title);
   const done = sub.status === "completed";
   return (
-    <li className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50/70 px-2 py-1">
+    <li className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800 px-2 py-1">
       <button
         type="button"
         role="checkbox"
@@ -353,8 +353,8 @@ function SubtaskRow({
         aria-label={done ? `Mark "${sub.title}" not done` : `Mark "${sub.title}" done`}
         onClick={onToggle}
         className={cn(
-          "flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] leading-none focus-visible:outline-2 focus-visible:outline-indigo-500",
-          done ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-400 bg-white hover:border-indigo-500",
+          "flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] leading-none focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400",
+          done ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 hover:border-indigo-500 dark:hover:border-indigo-400",
         )}
       >
         {done && <span aria-hidden>✓</span>}
@@ -376,8 +376,8 @@ function SubtaskRow({
           }
         }}
         className={cn(
-          "min-w-0 flex-1 rounded bg-transparent px-1 py-1 text-sm text-slate-800 focus:bg-white focus:outline-2 focus:outline-indigo-500",
-          done && "text-slate-400 line-through",
+          "min-w-0 flex-1 rounded bg-transparent px-1 py-1 text-sm focus:bg-white dark:focus:bg-slate-800 focus:outline-2 focus:outline-indigo-500 dark:focus:outline-indigo-400",
+          done ? "text-slate-400 line-through" : "text-slate-800 dark:text-slate-100",
         )}
       />
       <IconButton size="sm" label={`Open subtask ${sub.title}`} onClick={onOpen}>

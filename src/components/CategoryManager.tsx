@@ -22,7 +22,7 @@ const COLOR_KEYS = Object.keys(CATEGORY_COLORS);
 function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
   return (
     <fieldset className="flex flex-col gap-1">
-      <legend className="text-xs font-medium text-slate-600">Colour</legend>
+      <legend className="text-xs font-medium text-slate-600 dark:text-slate-300">Colour</legend>
       <div role="radiogroup" aria-label="Colour" className="flex flex-wrap gap-2">
         {COLOR_KEYS.map((c) => (
           <button
@@ -34,9 +34,9 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
             title={c}
             onClick={() => onChange(c)}
             className={cn(
-              "h-7 w-7 rounded-full ring-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500",
+              "h-7 w-7 rounded-full ring-offset-2 dark:ring-offset-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400",
               CATEGORY_COLORS[c].dot,
-              value === c ? "ring-2 ring-slate-900" : "ring-0 hover:ring-2 hover:ring-slate-300",
+              value === c ? "ring-2 ring-slate-900 dark:ring-slate-100" : "ring-0 hover:ring-2 hover:ring-slate-300 dark:hover:ring-slate-500",
             )}
           />
         ))}
@@ -104,12 +104,12 @@ function DeleteForm({ category, onClose }: { category: Category; onClose: () => 
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-slate-600 dark:text-slate-300">
         “{category.name}” has {count} task{count === 1 ? "" : "s"}. What should happen to {count === 1 ? "it" : "them"}?
       </p>
       <div className="flex flex-col gap-3" role="radiogroup" aria-label="What to do with its tasks">
-        <label className="flex items-start gap-2 text-sm text-slate-700">
-          <input type="radio" name="del-mode" checked={mode === "move"} onChange={() => setMode("move")} className="mt-1 accent-indigo-600" />
+        <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+          <input type="radio" name="del-mode" checked={mode === "move"} onChange={() => setMode("move")} className="mt-1 accent-indigo-600 dark:accent-indigo-400" />
           <span className="flex flex-1 flex-col gap-2">
             Move tasks to another category
             <Select
@@ -122,8 +122,8 @@ function DeleteForm({ category, onClose }: { category: Category; onClose: () => 
             />
           </span>
         </label>
-        <label className="flex items-start gap-2 text-sm text-slate-700">
-          <input type="radio" name="del-mode" checked={mode === "delete"} onChange={() => setMode("delete")} className="mt-1 accent-rose-600" />
+        <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+          <input type="radio" name="del-mode" checked={mode === "delete"} onChange={() => setMode("delete")} className="mt-1 accent-rose-600 dark:accent-rose-400" />
           <span>Delete its tasks too <span className="text-slate-400">(you can undo)</span></span>
         </label>
       </div>
@@ -208,13 +208,13 @@ export function CategoryManager({ dialog, onDialogChange }: CategoryManagerProps
           </>
         }
       >
-        <ul className="flex flex-col divide-y divide-slate-100">
+        <ul className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
           {data.categories.map((c, i) => {
             const n = countFor(c.id);
             return (
               <li key={c.id} className="flex items-center gap-3 py-2">
                 <span className={cn("h-3 w-3 shrink-0 rounded-full", CATEGORY_COLORS[c.color]?.dot ?? CATEGORY_COLORS.slate.dot)} aria-hidden />
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">{c.name}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{c.name}</span>
                 <span className="text-xs text-slate-400">{n} task{n === 1 ? "" : "s"}</span>
                 <div className="flex">
                   <IconButton label={`Move ${c.name} up`} size="sm" disabled={i === 0} data-move={`${c.id}:-1`} onClick={() => move(i, -1)}>
@@ -230,7 +230,7 @@ export function CategoryManager({ dialog, onDialogChange }: CategoryManagerProps
                   size="sm"
                   disabled={lastOne}
                   onClick={() => requestDelete(c)}
-                  className="hover:text-rose-600"
+                  className="hover:text-rose-600 dark:hover:text-rose-400"
                 >
                   <span aria-hidden>🗑</span>
                 </IconButton>

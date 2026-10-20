@@ -35,6 +35,7 @@ An interactive kanban to-do board with drag-and-drop cards, two ways of grouping
 - **Weekly progress:** a quiet "done this week" count and completion streak above the board
 - **Notes in light markdown:** bold, italic, code, links, lists and clickable `- [ ]` checklists; cards show a checklist count
 - Filter-aware quick add: a task added into a column but hidden by the current filters tells you and offers to clear them
+- **Dark mode:** System / Light / Dark in the header menu. "System" follows your OS live, the choice is remembered, and an inline script applies it before first paint so there is no flash
 
 ## User flows
 

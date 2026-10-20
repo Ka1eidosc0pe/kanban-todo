@@ -15,9 +15,9 @@ export function SampleBanner() {
   };
 
   return (
-    <div className="border-b border-amber-200 bg-amber-50">
+    <div className="border-b border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/15">
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5 sm:px-6">
-        <p className="flex-1 text-sm text-amber-900">
+        <p className="flex-1 text-sm text-amber-900 dark:text-amber-200">
           <strong className="font-semibold">Sample board</strong> — explore, then clear the samples to start fresh.
         </p>
         <Button size="sm" onClick={clear}>Clear samples &amp; start fresh</Button>

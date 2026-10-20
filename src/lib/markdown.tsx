@@ -38,7 +38,7 @@ const safeUrl = (raw: string): string | null => {
   }
 };
 
-const linkCls = "text-indigo-600 underline underline-offset-2 hover:text-indigo-800";
+const linkCls = "text-indigo-600 dark:text-indigo-400 underline underline-offset-2 hover:text-indigo-800 dark:hover:text-indigo-200";
 const external = { target: "_blank", rel: "noopener noreferrer" } as const;
 
 // code | [text](url) | **bold** | *italic* | _italic_ | bare URL
@@ -52,7 +52,7 @@ function inline(text: string, key = ""): ReactNode[] {
     if (m.index > last) out.push(text.slice(last, m.index));
     const k = `${key}${n++}`;
     if (m[1] !== undefined) {
-      out.push(<code key={k} className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.85em] text-slate-800">{m[1]}</code>);
+      out.push(<code key={k} className="rounded bg-slate-100 dark:bg-slate-800 px-1 py-0.5 font-mono text-[0.85em] text-slate-800 dark:text-slate-100">{m[1]}</code>);
     } else if (m[2] !== undefined) {
       const href = safeUrl(m[3]);
       out.push(href ? <a key={k} href={href} {...external} className={linkCls}>{m[2]}</a> : m[0]); // unsafe scheme: show as plain text
@@ -102,7 +102,7 @@ function parse(src: string): Block[] {
 
 export function Markdown({ source, onToggle }: { source: string; onToggle?: (lineIndex: number) => void }) {
   return (
-    <div className="flex flex-col gap-2 text-sm leading-relaxed text-slate-800 [overflow-wrap:anywhere]">
+    <div className="flex flex-col gap-2 text-sm leading-relaxed text-slate-800 dark:text-slate-100 [overflow-wrap:anywhere]">
       {parse(source).map((b, bi) => {
         if (b.kind === "p") {
           if (!b.lines.length) return null;
@@ -144,8 +144,8 @@ export function Markdown({ source, onToggle }: { source: string; onToggle?: (lin
                       onToggle?.(it.line);
                     }}
                     className={cn(
-                      "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] leading-none focus-visible:outline-2 focus-visible:outline-indigo-500",
-                      it.checked ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-400 bg-white hover:border-indigo-500",
+                      "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] leading-none focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400",
+                      it.checked ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 hover:border-indigo-500 dark:hover:border-indigo-400",
                     )}
                   >
                     {it.checked && <span aria-hidden>✓</span>}

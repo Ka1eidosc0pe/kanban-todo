@@ -39,17 +39,17 @@ export function WelcomeBack({ active, onPick }: WelcomeBackProps) {
   };
 
   const stats: { key: QuickFilter; count: number; label: string; tone: string }[] = [
-    { key: "overdue", count: overdue, label: "overdue", tone: "text-rose-700" },
-    { key: "soon", count: soon, label: "due within 3 days", tone: "text-amber-700" },
-    { key: "progress", count: progress, label: "in progress", tone: "text-sky-700" },
+    { key: "overdue", count: overdue, label: "overdue", tone: "text-rose-700 dark:text-rose-300" },
+    { key: "soon", count: soon, label: "due within 3 days", tone: "text-amber-700 dark:text-amber-300" },
+    { key: "progress", count: progress, label: "in progress", tone: "text-sky-700 dark:text-sky-300" },
   ];
 
   return (
-    <section aria-label="Welcome back" className="border-b border-indigo-100 bg-indigo-50/60">
+    <section aria-label="Welcome back" className="border-b border-indigo-100 dark:border-indigo-500/30 bg-indigo-50/60 dark:bg-indigo-500/10">
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 sm:px-6">
-        <p className="text-sm text-slate-700">
-          <strong className="font-semibold text-slate-900">Welcome back.</strong>{" "}
-          <span className="text-slate-500">Last visit {timeAgo(previousVisit)}.</span>
+        <p className="text-sm text-slate-700 dark:text-slate-200">
+          <strong className="font-semibold text-slate-900 dark:text-slate-100">Welcome back.</strong>{" "}
+          <span className="text-slate-500 dark:text-slate-400">Last visit {timeAgo(previousVisit)}.</span>
         </p>
         <ul className="flex flex-1 flex-wrap items-center gap-2">
           {stats.map((s) => (
@@ -60,11 +60,11 @@ export function WelcomeBack({ active, onPick }: WelcomeBackProps) {
                 disabled={s.count === 0}
                 onClick={() => onPick(active === s.key ? null : s.key)}
                 className={
-                  "rounded-full px-3 py-1 text-sm ring-1 ring-inset transition-colors focus-visible:outline-2 focus-visible:outline-indigo-500 disabled:cursor-default disabled:opacity-60 " +
-                  (active === s.key ? "bg-white ring-indigo-400" : "bg-white/70 ring-slate-200 hover:bg-white")
+                  "rounded-full px-3 py-1 text-sm ring-1 ring-inset transition-colors focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400 disabled:cursor-default disabled:opacity-60 " +
+                  (active === s.key ? "bg-white dark:bg-slate-800 ring-indigo-400" : "bg-white/70 dark:bg-slate-900/70 ring-slate-200 dark:ring-slate-800 hover:bg-white dark:hover:bg-slate-800")
                 }
               >
-                <strong className={s.tone}>{s.count}</strong> <span className="text-slate-600">{s.label}</span>
+                <strong className={s.tone}>{s.count}</strong> <span className="text-slate-600 dark:text-slate-300">{s.label}</span>
               </button>
             </li>
           ))}

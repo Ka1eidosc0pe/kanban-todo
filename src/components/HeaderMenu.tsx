@@ -79,7 +79,7 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
   };
 
   const item =
-    "flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none";
+    "flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:bg-slate-100 dark:focus-visible:bg-slate-800 focus-visible:outline-none";
 
   const run = (fn: () => void) => {
     setOpen(false);
@@ -105,13 +105,13 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
         <span aria-hidden className="text-lg leading-none">⋯</span>
       </IconButton>
       {open && (
-        <div id={menuId} role="menu" aria-label="App menu" className="absolute right-0 top-full z-40 mt-1 w-56 rounded-xl bg-white p-1 shadow-lg ring-1 ring-slate-200">
+        <div id={menuId} role="menu" aria-label="App menu" className="absolute right-0 top-full z-40 mt-1 w-56 rounded-xl bg-white dark:bg-slate-800 p-1 shadow-lg ring-1 ring-slate-200 dark:ring-slate-700">
           <button role="menuitem" type="button" className={item} onClick={() => run(() => onShowShortcuts?.())}>Keyboard shortcuts</button>
           <button role="menuitem" type="button" className={item} onClick={() => run(() => dispatch({ type: "setPrefs", patch: { tourDone: false } }))}>Replay tour</button>
           <button role="menuitem" type="button" className={item} onClick={() => run(() => setArchiveOpen(true))}>Auto-archive completed…</button>
-          <div role="separator" className="my-1 h-px bg-slate-100" />
+          <div role="separator" className="my-1 h-px bg-slate-100 dark:bg-slate-800" />
           <div role="group" aria-labelledby={`${menuId}-theme`}>
-            <div id={`${menuId}-theme`} className="px-3 pb-1 pt-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">Theme</div>
+            <div id={`${menuId}-theme`} className="px-3 pb-1 pt-1.5 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Theme</div>
             {THEME_OPTIONS.map((o) => {
               const checked = data.prefs.theme === o.value;
               return (
@@ -124,13 +124,13 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
                   onClick={() => dispatch({ type: "setPrefs", patch: { theme: o.value } })}
                 >
                   {o.label}
-                  <span aria-hidden className="text-indigo-600">{checked ? "✓" : ""}</span>
+                  <span aria-hidden className="text-indigo-600 dark:text-indigo-400">{checked ? "✓" : ""}</span>
                 </button>
               );
             })}
           </div>
-          <div role="separator" className="my-1 h-px bg-slate-100" />
-          <button role="menuitem" type="button" className={item + " text-rose-700"} onClick={() => run(() => setConfirm({ kind: "reset" }))}>Reset to sample data…</button>
+          <div role="separator" className="my-1 h-px bg-slate-100 dark:bg-slate-800" />
+          <button role="menuitem" type="button" className={item + " text-rose-700 dark:text-rose-300"} onClick={() => run(() => setConfirm({ kind: "reset" }))}>Reset to sample data…</button>
         </div>
       )}
 
@@ -144,11 +144,11 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
         <fieldset className="flex flex-col gap-2">
           <legend className="sr-only">Auto-archive completed tasks</legend>
           {ARCHIVE_OPTIONS.map((o) => (
-            <label key={o.label} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+            <label key={o.label} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input
                 type="radio"
                 name="auto-archive"
-                className="accent-indigo-600"
+                className="accent-indigo-600 dark:accent-indigo-400"
                 checked={data.prefs.autoArchiveDays === o.value}
                 onChange={() => dispatch({ type: "setPrefs", patch: { autoArchiveDays: o.value } })}
               />

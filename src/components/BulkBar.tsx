@@ -20,9 +20,9 @@ export function BulkBar({ count, categories, onStatus, onCategory, onArchive, on
       <div
         role="toolbar"
         aria-label="Bulk actions"
-        className="pointer-events-auto flex max-w-full flex-wrap items-center gap-2 rounded-2xl bg-white p-2 shadow-xl ring-1 ring-slate-200"
+        className="pointer-events-auto flex max-w-full flex-wrap items-center gap-2 rounded-2xl bg-white dark:bg-slate-800 p-2 shadow-xl ring-1 ring-slate-200 dark:ring-slate-700"
       >
-        <span className="px-2 text-sm font-medium text-slate-800" role="status">{count} selected</span>
+        <span className="px-2 text-sm font-medium text-slate-800 dark:text-slate-100" role="status">{count} selected</span>
         {/* value stays "" so picking the same option again still fires */}
         <Select
           label="Move to status"

@@ -110,12 +110,12 @@ export function CoachTour({ view, paused, onDone }: CoachTourProps) {
       <div
         role="dialog"
         aria-label={`Tour step ${i + 1} of ${STEPS.length}: ${step.title}`}
-        className="fixed z-40 rounded-2xl bg-white p-4 shadow-xl ring-1 ring-slate-200"
+        className="fixed z-40 rounded-2xl bg-white dark:bg-slate-800 p-4 shadow-xl ring-1 ring-slate-200 dark:ring-slate-700"
         style={style}
       >
-        <p className="text-xs font-medium text-indigo-600">Step {i + 1} of {STEPS.length}</p>
-        <h2 className="mt-0.5 text-sm font-semibold text-slate-900">{step.title}</h2>
-        <p className="mt-1 text-sm text-slate-600">{step.body}</p>
+        <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">Step {i + 1} of {STEPS.length}</p>
+        <h2 className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{step.title}</h2>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{step.body}</p>
         <div className="mt-3 flex items-center justify-between gap-2">
           <Button size="sm" variant="ghost" onClick={onDone}>Skip tour</Button>
           <div className="flex gap-2">
