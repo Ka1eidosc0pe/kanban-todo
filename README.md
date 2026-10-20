@@ -10,7 +10,7 @@ An interactive kanban to-do board with drag-and-drop cards, two ways of grouping
 |---|---|
 | **Flow** (first visit → core task → return) | See the flow diagrams below. |
 | **Onboarding** | A first visit loads a populated sample board plus a short coach tour. There is never an empty screen. One click clears the samples. |
-| **Coming back** | Autosave on every change. Last view, filters and open task are restored. A "Welcome back" strip summarises overdue, due-soon and in-progress work. |
+| **Coming back** | Autosave on every change. Last view and search filter are restored. A "Welcome back" strip summarises overdue, due-soon and in-progress work. |
 | **Components** | One shared set of primitives (`Button`, `Badge`, `Modal`, `Drawer`, `Toast`, `EmptyState`...) and domain components (`TaskCard`, `Column`, `ViewSwitcher`...). |
 | **Navigation** | Persistent header with a view switcher, URL-addressable views, breadcrumb in the task drawer, Esc/back closes overlays. |
 

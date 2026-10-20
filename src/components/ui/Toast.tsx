@@ -56,7 +56,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-indigo-300 hover:bg-white/10 hover:text-white"
+                className="text-indigo-200 font-semibold underline-offset-2 hover:bg-white/10 hover:text-white"
                 onClick={() => {
                   t.action?.onClick();
                   dismiss(t.id);
