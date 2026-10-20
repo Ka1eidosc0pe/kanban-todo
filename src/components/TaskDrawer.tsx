@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Badge, Button, Drawer, EmptyState, IconButton, Modal, Select, TextArea, TextField, cn, useToast } from "@/components/ui";
 import { uid, useStore } from "@/lib/store";
+import { toggleDonePatch } from "@/lib/taskUtils";
 import { STATUSES, STATUS_LABELS, type Priority, type Status, type Task } from "@/lib/types";
 
 export interface TaskDrawerProps {
@@ -68,7 +69,7 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
 
   const toggleSub = (sub: Task) => {
     const completing = sub.status !== "completed";
-    dispatch({ type: "updateTask", id: sub.id, patch: { status: completing ? "completed" : "created" } });
+    dispatch({ type: "updateTask", id: sub.id, patch: toggleDonePatch(sub) });
     const remaining = subtasks.filter((s) => s.id !== sub.id && s.status !== "completed").length;
     if (completing && remaining === 0 && task.status !== "completed") {
       toast({

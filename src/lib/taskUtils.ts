@@ -1,5 +1,11 @@
 import type { Task } from "./types";
 
+/** Patch for the done checkbox: remembers the prior status and restores it on uncheck. */
+export function toggleDonePatch(t: Task): Partial<Task> {
+  if (t.status !== "completed") return { status: "completed", statusBeforeDone: t.status };
+  return { status: t.statusBeforeDone && t.statusBeforeDone !== "completed" ? t.statusBeforeDone : "created", statusBeforeDone: undefined };
+}
+
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export function todayISO(): string {

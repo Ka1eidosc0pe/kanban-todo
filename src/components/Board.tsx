@@ -19,7 +19,7 @@ import { CategoryManager, type CategoryDialog } from "./CategoryManager";
 import { Column } from "./Column";
 import { FirstRunEmpty } from "./FirstRunEmpty";
 import { TaskCard } from "./TaskCard";
-import { QUICK_FILTER_LABELS, matchesQuery, matchesQuick, subtaskProgress, type QuickFilter } from "@/lib/taskUtils";
+import { QUICK_FILTER_LABELS, matchesQuery, matchesQuick, subtaskProgress, toggleDonePatch, type QuickFilter } from "@/lib/taskUtils";
 import { useStore } from "@/lib/store";
 import { CATEGORY_COLORS, STATUSES, STATUS_LABELS, type Status, type Task } from "@/lib/types";
 
@@ -147,8 +147,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     }
   };
 
-  const toggleDone = (t: Task) =>
-    dispatch({ type: "updateTask", id: t.id, patch: { status: t.status === "completed" ? "created" : "completed" } });
+  const toggleDone = (t: Task) => dispatch({ type: "updateTask", id: t.id, patch: toggleDonePatch(t) });
 
   const quickAdd = (title: string) => {
     const categoryId = data.categories[0]?.id;

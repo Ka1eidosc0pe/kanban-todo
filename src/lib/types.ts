@@ -27,6 +27,7 @@ export interface Task {
   priority: Priority;
   dueDate: string | null; // yyyy-mm-dd
   parentId: string | null; // non-null => subtask
+  statusBeforeDone?: Status; // status to restore when a checkbox-completed task is unchecked
   order: number; // position within its list (lower first)
   createdAt: number;
   updatedAt: number;
