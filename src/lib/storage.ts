@@ -14,10 +14,12 @@ export function loadData(): AppData | null {
   }
 }
 
-export function saveData(data: AppData): void {
+/** Returns false when the write failed (storage full or unavailable); the app keeps working in memory. */
+export function saveData(data: AppData): boolean {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return true;
   } catch {
-    /* storage full or unavailable: keep working in memory */
+    return false;
   }
 }

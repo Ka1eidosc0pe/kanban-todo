@@ -17,8 +17,8 @@ import type { Status, ViewMode } from "@/lib/types";
 const isView = (v: string | null): v is ViewMode => v === "status" || v === "category";
 
 export function BoardPage() {
-  const { ready, data, dispatch, syncTick } = useStore();
-  const { toast } = useToast();
+  const { ready, data, dispatch, syncTick, saveFailed } = useStore();
+  const { toast, dismiss } = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -75,6 +75,17 @@ export function BoardPage() {
       t.status === init.status && t.categoryId === init.categoryId && !tasks.some((x) => x.parentId === prev);
     if (untouched) dispatch({ type: "deleteTask", id: prev });
   }, [selectedTaskId, dispatch]);
+
+  // Sticky storage-full notice: once per failure streak, cleared when a save succeeds.
+  const fullToast = useRef<number | null>(null);
+  useEffect(() => {
+    if (saveFailed && fullToast.current === null) {
+      fullToast.current = toast({ message: "Your browser's storage is full — recent changes may not be saved.", duration: 0 });
+    } else if (!saveFailed && fullToast.current !== null) {
+      dismiss(fullToast.current);
+      fullToast.current = null;
+    }
+  }, [saveFailed, toast, dismiss]);
 
   const changeView = (v: ViewMode) => {
     dispatch({ type: "setPrefs", patch: { view: v } });

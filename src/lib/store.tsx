@@ -215,6 +215,8 @@ interface Store {
   resetAll: () => void;
   /** Increments each time another tab's changes were loaded. */
   syncTick: number;
+  /** True while the latest save failed (e.g. storage full). */
+  saveFailed: boolean;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -226,6 +228,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [previousVisit, setPrev] = useState<number | null>(null);
   const [historyLen, setHistoryLen] = useState(0);
   const [syncTick, setSyncTick] = useState(0);
+  const [saveFailed, setSaveFailed] = useState(false);
   const externalRef = useRef<AppData | null>(null); // data just loaded from another tab: don't write it back
   const history = useRef<{ id: number; record: UndoRecord }[]>([]);
   const nextUndoId = useRef(1);
@@ -248,7 +251,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (ready && data !== externalRef.current) saveData(data);
+    if (ready && data !== externalRef.current) setSaveFailed(!saveData(data));
   }, [data, ready]);
 
   // Another tab wrote the board: adopt it (stale undo records are unsafe, so drop them).
@@ -298,8 +301,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<Store>(
-    () => ({ ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, canUndo: historyLen > 0, resetAll, syncTick }),
-    [ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, historyLen, resetAll, syncTick],
+    () => ({ ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, canUndo: historyLen > 0, resetAll, syncTick, saveFailed }),
+    [ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, historyLen, resetAll, syncTick, saveFailed],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
