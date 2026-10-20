@@ -25,10 +25,17 @@ export function formatDue(dueDate: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
-export function subtaskProgress(taskId: string, tasks: Task[]): { done: number; total: number } | null {
-  const subs = tasks.filter((t) => t.parentId === taskId);
-  if (subs.length === 0) return null;
-  return { done: subs.filter((t) => t.status === "completed").length, total: subs.length };
+/** Done/total subtask counts per parent id, computed in one pass. */
+export function subtaskProgressMap(tasks: Task[]): Map<string, { done: number; total: number }> {
+  const m = new Map<string, { done: number; total: number }>();
+  for (const t of tasks) {
+    if (!t.parentId) continue;
+    const p = m.get(t.parentId) ?? { done: 0, total: 0 };
+    p.total++;
+    if (t.status === "completed") p.done++;
+    m.set(t.parentId, p);
+  }
+  return m;
 }
 
 export function matchesQuery(task: Task, query: string): boolean {

@@ -19,7 +19,7 @@ import { CategoryManager, type CategoryDialog } from "./CategoryManager";
 import { Column } from "./Column";
 import { FirstRunEmpty } from "./FirstRunEmpty";
 import { TaskCard } from "./TaskCard";
-import { QUICK_FILTER_LABELS, matchesQuery, matchesQuick, subtaskProgress, toggleDonePatch, type QuickFilter } from "@/lib/taskUtils";
+import { QUICK_FILTER_LABELS, matchesQuery, matchesQuick, subtaskProgressMap, toggleDonePatch, type QuickFilter } from "@/lib/taskUtils";
 import { useStore } from "@/lib/store";
 import { CATEGORY_COLORS, STATUSES, STATUS_LABELS, type Status, type Task } from "@/lib/types";
 
@@ -80,6 +80,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
   );
 
   const byId = useMemo(() => new Map(data.tasks.map((t) => [t.id, t])), [data.tasks]);
+  const progressById = useMemo(() => subtaskProgressMap(data.tasks), [data.tasks]);
   const catById = useMemo(() => new Map(data.categories.map((c) => [c.id, c])), [data.categories]);
 
   const columns = useMemo<ColumnDef[]>(() => {
@@ -164,7 +165,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       view={view}
       category={catById.get(t.categoryId)}
       parent={t.parentId ? byId.get(t.parentId) : undefined}
-      progress={t.parentId ? null : subtaskProgress(t.id, data.tasks)}
+      progress={t.parentId ? null : (progressById.get(t.id) ?? null)}
       onOpen={onOpenTask}
       onToggleDone={toggleDone}
       {...extra}

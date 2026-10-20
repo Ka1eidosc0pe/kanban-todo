@@ -7,7 +7,7 @@ import type { AppData, Category, Prefs, Status, Task } from "./types";
 
 const SAVE_DELAY = 300; // ms; saves are batched (trailing)
 
-export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+export const uid = () => crypto.randomUUID();
 
 type Action =
   | { type: "hydrate"; data: AppData }

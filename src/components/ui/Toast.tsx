@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "./Button";
 
 export interface ToastOptions {
@@ -24,14 +24,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
 
-  const dismiss = useCallback((id: number) => setItems((l) => l.filter((t) => t.id !== id)), []);
+  const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+
+  const dismiss = useCallback((id: number) => {
+    const h = timers.current.get(id);
+    if (h) clearTimeout(h);
+    timers.current.delete(id);
+    setItems((l) => l.filter((t) => t.id !== id));
+  }, []);
+  useEffect(() => {
+    const map = timers.current;
+    return () => {
+      map.forEach(clearTimeout);
+      map.clear();
+    };
+  }, []);
   const toast = useCallback(
     (o: ToastOptions | string) => {
       const opts = typeof o === "string" ? { message: o } : o;
       const id = nextId.current++;
       setItems((l) => [...l.slice(-3), { ...opts, id }]);
       const ms = opts.duration ?? 6000;
-      if (ms > 0) setTimeout(() => dismiss(id), ms);
+      if (ms > 0) timers.current.set(id, setTimeout(() => dismiss(id), ms));
       return id;
     },
     [dismiss],
