@@ -49,6 +49,8 @@ export interface Prefs {
   query: string;
   filters: Filters;
   sort: SortMode;
+  collapsed: Record<ViewMode, string[]>; // collapsed column keys per view
+  wipLimit: number | null; // limit for the Status view's "In progress" column (null = none)
   tourDone: boolean;
   lastVisit: number | null;
 }

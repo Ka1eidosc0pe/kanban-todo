@@ -72,7 +72,7 @@ function SortableCard({ task, children }: { task: Task; children: (p: React.Comp
 export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilterChange }: BoardProps) {
   const { data, dispatch, dispatchUndoable, undo } = useStore();
   const { toast } = useToast();
-  const { view, query, showArchived, filters, sort } = data.prefs;
+  const { view, query, showArchived, filters, sort, collapsed, wipLimit } = data.prefs;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [catDialog, setCatDialog] = useState<CategoryDialog>(null);
 
@@ -175,6 +175,12 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     const categoryId = data.categories[0]?.id;
     if (categoryId) dispatch({ type: "addTask", task: { title, categoryId } });
   };
+  const collapsedKeys = collapsed[view];
+  const toggleCollapsed = (key: string) =>
+    dispatch({
+      type: "setPrefs",
+      patch: { collapsed: { ...collapsed, [view]: collapsedKeys.includes(key) ? collapsedKeys.filter((k) => k !== key) : [...collapsedKeys, key] } },
+    });
   const filterCount = activeFilterCount(filters, view);
   const filtered = !!query.trim() || !!quickFilter || filterCount > 0;
 
@@ -259,6 +265,15 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
               onAdd={() => onAddTask(c.target)}
               onQuickAdd={(title) => addInline(c.target, title)}
               reorderable={sort === "manual"}
+              collapsed={collapsedKeys.includes(c.key)}
+              onToggleCollapse={() => toggleCollapsed(c.key)}
+              {...(c.key === "in_progress" && view === "status"
+                ? {
+                    wipLimit,
+                    wipCount: data.tasks.filter((t) => t.status === "in_progress").length,
+                    onWipChange: (n: number | null) => dispatch({ type: "setPrefs", patch: { wipLimit: n } }),
+                  }
+                : {})}
               emptyText={filtered ? "No matching cards" : "Drop a card here"}
             >
               {c.tasks.map((t) => (

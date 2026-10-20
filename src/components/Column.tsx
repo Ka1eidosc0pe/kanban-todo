@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Button, EmptyState, IconButton, cn } from "@/components/ui";
+import { Button, EmptyState, IconButton, TextField, cn } from "@/components/ui";
 
 export interface ColumnProps {
   /** Droppable id; Board uses `col:<key>`. */
@@ -19,13 +19,20 @@ export interface ColumnProps {
   emptyText?: string;
   /** False while the board is sorted: no reordering within the column. */
   reorderable?: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  /** Providing `onWipChange` makes the count chip a WIP-limit control (null = no limit). */
+  wipLimit?: number | null;
+  onWipChange?: (limit: number | null) => void;
+  /** Card count used for the WIP limit (the real count, not just the cards matching filters). */
+  wipCount?: number;
   children: React.ReactNode;
 }
 
 /** Sorting strategy that never shifts siblings (drop positions are meaningless when sorted). */
 const noShift = () => null;
 
-export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, onQuickAdd, emptyText = "Drop a card here", reorderable = true, children }: ColumnProps) {
+export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, onQuickAdd, emptyText = "Drop a card here", reorderable = true, collapsed = false, onToggleCollapse, wipLimit = null, onWipChange, wipCount, children }: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const headingId = `${id}-heading`;
   const [adding, setAdding] = useState(false);
@@ -38,23 +45,113 @@ export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, o
     setAdding(false);
     setDraft("");
   };
+  const [wipOpen, setWipOpen] = useState(false);
+  const wipRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!wipOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!wipRef.current?.contains(e.target as Node)) setWipOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      setWipOpen(false);
+      wipRef.current?.querySelector<HTMLElement>("button")?.focus();
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [wipOpen]);
+
+  const count = wipLimit !== null && wipCount !== undefined ? wipCount : taskIds.length;
+  const over = wipLimit !== null && count > wipLimit;
+  const chipText = wipLimit !== null ? `${count}/${wipLimit}` : String(count);
+  const chipLabel = wipLimit !== null ? `${count} of ${wipLimit} cards (limit)` : `${count} cards`;
+  const chipCls = cn("rounded-full px-2 py-0.5 text-xs font-medium", over ? "bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-300" : "bg-white text-slate-500");
+
+  if (collapsed) {
+    return (
+      <section
+        ref={setNodeRef}
+        aria-labelledby={headingId}
+        className={cn(
+          "flex max-h-full w-12 shrink-0 snap-start flex-col items-center gap-2 rounded-2xl bg-slate-100/80 py-3 ring-1 ring-slate-200/70 transition-colors",
+          isOver && "bg-indigo-100",
+        )}
+      >
+        <IconButton label={`Expand ${title}`} size="sm" aria-expanded={false} onClick={onToggleCollapse}>
+          <span aria-hidden>▸</span>
+        </IconButton>
+        <span className={chipCls} aria-label={chipLabel} title={over ? `Over limit (${count}/${wipLimit})` : undefined}>{chipText}</span>
+        <span className={cn("h-2.5 w-2.5 rounded-full", dotClass)} aria-hidden />
+        <h2 id={headingId} style={{ writingMode: "vertical-rl" }} className="min-h-0 flex-1 truncate text-sm font-semibold text-slate-800">{title}</h2>
+      </section>
+    );
+  }
+
   return (
     <section
       aria-labelledby={headingId}
       className="flex max-h-full w-[18rem] shrink-0 snap-start flex-col rounded-2xl bg-slate-100/80 ring-1 ring-slate-200/70 sm:w-72"
     >
-      <div className="flex items-center gap-2 px-3 pb-2 pt-3">
+      <div className="relative flex items-center gap-2 px-3 pb-2 pt-3">
         <span className={cn("h-2.5 w-2.5 rounded-full", dotClass)} aria-hidden />
         <h2 id={headingId} className="flex-1 truncate text-sm font-semibold text-slate-800">{title}</h2>
-        <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-slate-500" aria-label={`${taskIds.length} cards`}>
-          {taskIds.length}
-        </span>
+        {onWipChange ? (
+          <div ref={wipRef}>
+            <button
+              type="button"
+              className={cn(chipCls, "hover:ring-1 hover:ring-slate-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500")}
+              aria-label={`${chipLabel}. Set WIP limit`}
+              aria-haspopup="dialog"
+              aria-expanded={wipOpen}
+              title="Set WIP limit"
+              onClick={() => setWipOpen((o) => !o)}
+            >
+              {chipText}
+            </button>
+            {wipOpen && (
+              <div role="dialog" aria-label="WIP limit" data-popover className="absolute right-3 top-full z-30 mt-1 flex w-52 flex-col gap-2 rounded-xl bg-white p-3 shadow-lg ring-1 ring-slate-200">
+                <TextField
+                  label="WIP limit"
+                  hint="Leave empty for no limit."
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  placeholder="No limit"
+                  data-autofocus
+                  autoFocus
+                  value={wipLimit ?? ""}
+                  onChange={(e) => {
+                    const n = Math.floor(Number(e.target.value));
+                    onWipChange(e.target.value !== "" && n > 0 ? n : null);
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && setWipOpen(false)}
+                />
+                <div className="flex justify-end">
+                  <Button size="sm" variant="ghost" disabled={wipLimit === null} onClick={() => onWipChange(null)}>Clear</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <span className={chipCls} aria-label={chipLabel}>{chipText}</span>
+        )}
+        {onToggleCollapse && (
+          <IconButton label={`Collapse ${title}`} size="sm" aria-expanded onClick={() => { closeAdd(); onToggleCollapse(); }}>
+            <span aria-hidden>◂</span>
+          </IconButton>
+        )}
         {onAdd && (
           <IconButton label={`Add task to ${title}`} size="sm" onClick={onAdd}>
             <span aria-hidden className="text-base leading-none">+</span>
           </IconButton>
         )}
       </div>
+      {over && <p className="px-3 pb-2 text-[11px] font-medium text-rose-600" role="status">Over limit ({count}/{wipLimit})</p>}
       <div
         ref={setNodeRef}
         className={cn("flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2 transition-colors", isOver && "rounded-xl bg-indigo-50/70")}

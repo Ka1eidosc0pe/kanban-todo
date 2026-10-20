@@ -38,6 +38,11 @@ function migrate(parsed: unknown): AppData | null {
       ...createSeed().prefs,
       ...prefs,
       filters: { ...DEFAULT_FILTERS, ...(isObj(prefs.filters) ? prefs.filters : {}) },
+      collapsed: {
+        status: isObj(prefs.collapsed) && Array.isArray(prefs.collapsed.status) ? prefs.collapsed.status : [],
+        category: isObj(prefs.collapsed) && Array.isArray(prefs.collapsed.category) ? prefs.collapsed.category : [],
+      },
+      wipLimit: typeof prefs.wipLimit === "number" && prefs.wipLimit > 0 ? Math.floor(prefs.wipLimit) : null,
     },
     isSample: parsed.isSample === true,
   };
