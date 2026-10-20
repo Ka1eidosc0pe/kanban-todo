@@ -108,7 +108,7 @@ function TaskEditor({ task, onClose, onOpenTask }: { task: Task; onClose: () => 
     onClose();
   };
 
-  const crumb = "rounded px-1 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400";
+  const crumb = "rounded px-1 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400";
   const header = (
     <nav aria-label="Breadcrumb">
       <ol className="flex flex-wrap items-center gap-x-1 text-xs text-slate-500 dark:text-slate-400">

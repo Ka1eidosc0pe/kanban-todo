@@ -79,7 +79,7 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
   };
 
   const item =
-    "flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:bg-slate-100 dark:focus-visible:bg-slate-800 focus-visible:outline-none";
+    "flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 focus-visible:bg-slate-100 dark:focus-visible:bg-white/10 focus-visible:outline-none";
 
   const run = (fn: () => void) => {
     setOpen(false);

@@ -7,7 +7,7 @@ export type ButtonSize = "sm" | "md" | "lg";
 export const buttonVariants: Record<ButtonVariant, string> = {
   primary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm",
   secondary: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-slate-300 dark:ring-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700",
-  ghost: "bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800",
+  ghost: "bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10",
   danger: "bg-rose-600 text-white hover:bg-rose-700 shadow-sm",
 };
 export const buttonSizes: Record<ButtonSize, string> = {

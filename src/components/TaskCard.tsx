@@ -62,7 +62,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
       <div
         {...shared}
         className={cn(
-          "group flex cursor-grab touch-manipulation select-none items-start gap-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800 px-2.5 py-2 outline-none transition-colors hover:border-indigo-300 dark:hover:border-indigo-500/60 hover:bg-white dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400",
+          "group flex cursor-grab touch-manipulation select-none items-start gap-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800 px-2.5 py-2 outline-none transition-colors hover:border-indigo-300 dark:hover:border-indigo-500/60 hover:bg-white dark:hover:bg-slate-700 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400",
           selected && "ring-2 ring-indigo-500 dark:ring-indigo-400 ring-offset-1 dark:ring-offset-slate-900",
           dragging && "opacity-40",
           overlay && "cursor-grabbing rotate-1 border-solid bg-white dark:bg-slate-800 shadow-lg",
@@ -112,7 +112,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
     <div
       {...shared}
       className={cn(
-        "cursor-grab touch-manipulation select-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400",
+        "cursor-grab touch-manipulation select-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 shadow-sm dark:shadow-black/40 outline-none transition hover:shadow-md dark:hover:border-slate-500 dark:hover:bg-slate-700/60 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400",
         overdue && "border-l-4 border-l-rose-400",
         dueToday && "border-l-4 border-l-amber-400",
         selected && "ring-2 ring-indigo-500 dark:ring-indigo-400 ring-offset-1 dark:ring-offset-slate-900",
