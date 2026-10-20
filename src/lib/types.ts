@@ -51,6 +51,8 @@ export interface Filters {
 }
 export const DEFAULT_FILTERS: Filters = { priorities: [], categoryIds: [], due: "any" };
 
+export type Theme = "system" | "light" | "dark";
+
 export interface Prefs {
   view: ViewMode;
   showArchived: boolean;
@@ -60,6 +62,7 @@ export interface Prefs {
   collapsed: Record<BoardView, string[]>; // collapsed column keys per view
   wipLimit: number | null; // limit for the Status view's "In progress" column (null = none)
   autoArchiveDays: number | null; // archive completed tasks after this many days (null = off)
+  theme: Theme;
   tourDone: boolean;
   lastVisit: number | null;
 }

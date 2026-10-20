@@ -4,8 +4,14 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Button, IconButton, Modal, useToast } from "@/components/ui";
 import { createSeed } from "@/lib/seed";
 import { useStore } from "@/lib/store";
+import type { Theme } from "@/lib/types";
 
 type Confirm = null | { kind: "reset" };
+const THEME_OPTIONS: { value: Theme; label: string }[] = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
 const ARCHIVE_OPTIONS: { value: number | null; label: string }[] = [
   { value: null, label: "Off" },
   ...[1, 3, 7, 14, 30].map((d) => ({ value: d, label: `After ${d} day${d === 1 ? "" : "s"}` })),
@@ -23,7 +29,7 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
 
   useEffect(() => {
     if (!open) return;
-    const items = () => Array.from(wrapRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const items = () => Array.from(wrapRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemradio"]') ?? []);
     items()[0]?.focus();
     const onDown = (e: MouseEvent) => {
       if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
@@ -66,7 +72,7 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
     const seed = createSeed();
     const id = dispatchUndoable({
       type: "restore",
-      data: { ...seed, prefs: { ...seed.prefs, tourDone: data.prefs.tourDone, autoArchiveDays: data.prefs.autoArchiveDays, lastVisit: data.prefs.lastVisit } },
+      data: { ...seed, prefs: { ...seed.prefs, tourDone: data.prefs.tourDone, autoArchiveDays: data.prefs.autoArchiveDays, theme: data.prefs.theme, lastVisit: data.prefs.lastVisit } },
     });
     toast({ message: "Board reset to sample data", action: { label: "Undo", onClick: () => undo(id) } });
     setConfirm(null);
@@ -103,6 +109,26 @@ export function HeaderMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }
           <button role="menuitem" type="button" className={item} onClick={() => run(() => onShowShortcuts?.())}>Keyboard shortcuts</button>
           <button role="menuitem" type="button" className={item} onClick={() => run(() => dispatch({ type: "setPrefs", patch: { tourDone: false } }))}>Replay tour</button>
           <button role="menuitem" type="button" className={item} onClick={() => run(() => setArchiveOpen(true))}>Auto-archive completed…</button>
+          <div role="separator" className="my-1 h-px bg-slate-100" />
+          <div role="group" aria-labelledby={`${menuId}-theme`}>
+            <div id={`${menuId}-theme`} className="px-3 pb-1 pt-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">Theme</div>
+            {THEME_OPTIONS.map((o) => {
+              const checked = data.prefs.theme === o.value;
+              return (
+                <button
+                  key={o.value}
+                  role="menuitemradio"
+                  aria-checked={checked}
+                  type="button"
+                  className={item + " justify-between"}
+                  onClick={() => dispatch({ type: "setPrefs", patch: { theme: o.value } })}
+                >
+                  {o.label}
+                  <span aria-hidden className="text-indigo-600">{checked ? "✓" : ""}</span>
+                </button>
+              );
+            })}
+          </div>
           <div role="separator" className="my-1 h-px bg-slate-100" />
           <button role="menuitem" type="button" className={item + " text-rose-700"} onClick={() => run(() => setConfirm({ kind: "reset" }))}>Reset to sample data…</button>
         </div>
