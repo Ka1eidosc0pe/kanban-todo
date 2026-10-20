@@ -155,6 +155,12 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
 
   const toggleDone = useCallback((t: Task) => dispatch({ type: "updateTask", id: t.id, patch: toggleDonePatch(t) }), [dispatch]);
 
+  // Inline add: lands at the end of its column; not registered as "fresh", so it is never auto-discarded.
+  const addInline = (target: { status?: Status; categoryId?: string }, title: string) => {
+    const categoryId = target.categoryId ?? data.categories[0]?.id;
+    if (categoryId) dispatch({ type: "addTask", task: { title, categoryId, ...(target.status ? { status: target.status } : {}) } });
+  };
+
   const quickAdd = (title: string) => {
     const categoryId = data.categories[0]?.id;
     if (categoryId) dispatch({ type: "addTask", task: { title, categoryId } });
@@ -225,6 +231,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
               dotClass={c.dot}
               taskIds={c.tasks.map((t) => t.id)}
               onAdd={() => onAddTask(c.target)}
+              onQuickAdd={(title) => addInline(c.target, title)}
               emptyText={filtered ? "No matching cards" : "Drop a card here"}
             >
               {c.tasks.map((t) => (
