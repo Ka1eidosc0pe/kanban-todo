@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { createSeed } from "./seed";
-import { loadData, saveData } from "./storage";
+import { STORAGE_KEY, loadData, saveData } from "./storage";
 import type { AppData, Category, Prefs, Status, Task } from "./types";
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
@@ -186,6 +186,8 @@ interface Store {
   undo: (id?: number) => void;
   canUndo: boolean;
   resetAll: () => void;
+  /** Increments each time another tab's changes were loaded. */
+  syncTick: number;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -196,6 +198,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [isFirstVisit, setFirst] = useState(false);
   const [previousVisit, setPrev] = useState<number | null>(null);
   const [historyLen, setHistoryLen] = useState(0);
+  const [syncTick, setSyncTick] = useState(0);
+  const externalRef = useRef<AppData | null>(null); // data just loaded from another tab: don't write it back
   const history = useRef<{ id: number; record: UndoRecord }[]>([]);
   const nextUndoId = useRef(1);
   const dataRef = useRef(data);
@@ -217,8 +221,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (ready) saveData(data);
+    if (ready && data !== externalRef.current) saveData(data);
   }, [data, ready]);
+
+  // Another tab wrote the board: adopt it (stale undo records are unsafe, so drop them).
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY || e.storageArea !== window.localStorage) return;
+      const next = loadData();
+      if (!next) return;
+      history.current = [];
+      setHistoryLen(0);
+      externalRef.current = next;
+      dataRef.current = next;
+      rawDispatch({ type: "hydrate", data: next });
+      setSyncTick((n) => n + 1);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const dispatch = useCallback((a: Action) => {
     dataRef.current = reducer(dataRef.current, a); // keep the ref current for same-tick dispatches
@@ -250,8 +271,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<Store>(
-    () => ({ ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, canUndo: historyLen > 0, resetAll }),
-    [ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, historyLen, resetAll],
+    () => ({ ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, canUndo: historyLen > 0, resetAll, syncTick }),
+    [ready, data, previousVisit, isFirstVisit, dispatch, dispatchUndoable, undo, historyLen, resetAll, syncTick],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

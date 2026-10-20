@@ -17,7 +17,7 @@ import type { Status, ViewMode } from "@/lib/types";
 const isView = (v: string | null): v is ViewMode => v === "status" || v === "category";
 
 export function BoardPage() {
-  const { ready, data, dispatch } = useStore();
+  const { ready, data, dispatch, syncTick } = useStore();
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -49,6 +49,10 @@ export function BoardPage() {
   useEffect(() => {
     if (ready && taskParam && !selectedTaskId) router.replace(buildUrl(view, null), { scroll: false });
   }, [ready, taskParam, selectedTaskId, view, router, buildUrl]);
+
+  useEffect(() => {
+    if (syncTick > 0) toast("Board updated from another tab");
+  }, [syncTick, toast]);
 
   const changeView = (v: ViewMode) => {
     dispatch({ type: "setPrefs", patch: { view: v } });
