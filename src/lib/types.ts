@@ -10,7 +10,9 @@ export const STATUS_LABELS: Record<Status, string> = {
 };
 
 export type Priority = "low" | "medium" | "high";
-export type ViewMode = "status" | "category";
+export type ViewMode = "status" | "category" | "agenda";
+/** Views that are dnd column boards (agenda is a plain list). */
+export type BoardView = Exclude<ViewMode, "agenda">;
 
 export interface Category {
   id: string;
@@ -49,7 +51,7 @@ export interface Prefs {
   query: string;
   filters: Filters;
   sort: SortMode;
-  collapsed: Record<ViewMode, string[]>; // collapsed column keys per view
+  collapsed: Record<BoardView, string[]>; // collapsed column keys per view
   wipLimit: number | null; // limit for the Status view's "In progress" column (null = none)
   tourDone: boolean;
   lastVisit: number | null;

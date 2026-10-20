@@ -54,7 +54,7 @@ export function FilterPopover({ view, categories, filters, onChange }: { view: V
               </label>
             ))}
           </fieldset>
-          {view === "status" && (
+          {view !== "category" && (
             <fieldset className="flex flex-col gap-1.5">
               <legend className="mb-1 text-xs font-medium text-slate-600">Category</legend>
               <div className="flex max-h-32 flex-col gap-1.5 overflow-y-auto">

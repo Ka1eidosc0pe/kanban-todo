@@ -5,8 +5,8 @@ import { Badge, cn } from "@/components/ui";
 import { todayISO, dueLabel, isDueToday, isOverdue } from "@/lib/taskUtils";
 import { CATEGORY_COLORS, STATUS_LABELS, type Category, type Status, type Task, type Priority, type ViewMode } from "@/lib/types";
 
-const STATUS_TONE = { created: "neutral", planned: "sky", in_progress: "amber", completed: "green", archived: "neutral" } as const;
-const PRIORITY: Record<Priority, { label: string; cls: string }> = {
+export const STATUS_TONE = { created: "neutral", planned: "sky", in_progress: "amber", completed: "green", archived: "neutral" } as const;
+export const PRIORITY: Record<Priority, { label: string; cls: string }> = {
   high: { label: "High", cls: "bg-rose-500" },
   medium: { label: "Medium", cls: "bg-amber-400" },
   low: { label: "Low", cls: "bg-slate-300" },

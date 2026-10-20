@@ -123,14 +123,14 @@ export const DUE_FILTER_LABELS: Record<DueFilter, string> = {
 };
 export const SORT_LABELS: Record<SortMode, string> = { manual: "Manual", due: "Due date", priority: "Priority" };
 
-/** Category filtering only applies in Status view (in Category view the columns are the categories). */
+/** Category filtering applies everywhere except Category view (there the columns are the categories). */
 export function activeFilterCount(f: Filters, view: ViewMode): number {
-  return (f.priorities.length ? 1 : 0) + (view === "status" && f.categoryIds.length ? 1 : 0) + (f.due !== "any" ? 1 : 0);
+  return (f.priorities.length ? 1 : 0) + (view !== "category" && f.categoryIds.length ? 1 : 0) + (f.due !== "any" ? 1 : 0);
 }
 
 export function matchesFilters(task: Task, f: Filters, view: ViewMode, today = todayISO()): boolean {
   if (f.priorities.length && !f.priorities.includes(task.priority)) return false;
-  if (view === "status" && f.categoryIds.length && !f.categoryIds.includes(task.categoryId)) return false;
+  if (view !== "category" && f.categoryIds.length && !f.categoryIds.includes(task.categoryId)) return false;
   switch (f.due) {
     case "overdue":
       return isOverdue(task, today);
@@ -158,4 +158,28 @@ export function sortTasks(tasks: Task[], sort: SortMode): Task[] {
     }
     return key(a) - key(b);
   });
+}
+
+export type AgendaGroup = "overdue" | "today" | "tomorrow" | "week" | "later" | "none";
+export const AGENDA_GROUPS: { key: AgendaGroup; label: string }[] = [
+  { key: "overdue", label: "Overdue" },
+  { key: "today", label: "Today" },
+  { key: "tomorrow", label: "Tomorrow" },
+  { key: "week", label: "This week" },
+  { key: "later", label: "Later" },
+  { key: "none", label: "No due date" },
+];
+
+/** Which agenda bucket an open task belongs to ("This week" = 2 to 6 days out). */
+export function agendaGroup(task: Task, today = todayISO()): AgendaGroup {
+  if (!task.dueDate) return "none";
+  const diff = dayNum(task.dueDate) - dayNum(today);
+  return diff < 0 ? "overdue" : diff === 0 ? "today" : diff === 1 ? "tomorrow" : diff <= 6 ? "week" : "later";
+}
+
+/** Open tasks bucketed for the agenda; within a bucket: due date, then priority, then manual order. Empty buckets are omitted. */
+export function groupAgenda(tasks: Task[], today = todayISO()): { key: AgendaGroup; label: string; tasks: Task[] }[] {
+  const due = (t: Task) => t.dueDate ?? "9999-99-99";
+  const open = tasks.filter(isOpen).sort((a, b) => due(a).localeCompare(due(b)) || PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] || a.order - b.order);
+  return AGENDA_GROUPS.map((g) => ({ ...g, tasks: open.filter((t) => agendaGroup(t, today) === g.key) })).filter((g) => g.tasks.length);
 }

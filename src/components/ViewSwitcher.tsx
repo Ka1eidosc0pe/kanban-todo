@@ -6,6 +6,7 @@ import type { ViewMode } from "@/lib/types";
 const OPTIONS: { value: ViewMode; label: string }[] = [
   { value: "status", label: "Status" },
   { value: "category", label: "Category" },
+  { value: "agenda", label: "Agenda" },
 ];
 
 export function ViewSwitcher({ value, onChange }: { value: ViewMode; onChange: (v: ViewMode) => void }) {

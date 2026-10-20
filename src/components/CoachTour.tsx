@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui";
+import type { ViewMode } from "@/lib/types";
 
 interface Step {
   selector: string;
@@ -13,7 +14,7 @@ const STEPS: Step[] = [
   { selector: '[data-variant="main"]', title: "Drag a card", body: "Drag any card to another list. In Status view it changes the status; in Category view, the category. Keyboard: focus a card, press Space, then arrow keys." },
   { selector: '[data-tour="add-task"]', title: "Add a task", body: "Click here or press N to add a task. Fill in notes, a due date and priority." },
   { selector: '[data-variant="main"]', title: "Open a card for subtasks", body: "Click a card to open its details. Subtasks you add there show up on the board as their own cards." },
-  { selector: '[data-tour="view-switcher"]', title: "Switch views", body: "Group your board by status or by category. You can also manage your own categories in Category view." },
+  { selector: '[data-tour="view-switcher"]', title: "Switch views", body: "Group your board by status or by category, or see everything open as a dated Agenda. You can also manage your own categories in Category view." },
 ];
 
 const POP_W = 320;
@@ -25,17 +26,24 @@ interface Rect {
   height: number;
 }
 
+// Agenda has no draggable cards: point at its rows instead.
+const AGENDA_STEPS: Record<number, Partial<Step>> = {
+  0: { selector: "[data-agenda-row]", title: "Your open tasks", body: "Tasks are grouped by when they are due. Tick the box to finish one; recurring tasks come back on their own." },
+  2: { selector: "[data-agenda-row]" },
+};
+
 export interface CoachTourProps {
+  view?: ViewMode;
   /** Hide while another overlay is in front. */
   paused?: boolean;
   onDone: () => void;
 }
 
-export function CoachTour({ paused, onDone }: CoachTourProps) {
+export function CoachTour({ view, paused, onDone }: CoachTourProps) {
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
-  const step = STEPS[i];
+  const step = { ...STEPS[i], ...(view === "agenda" ? AGENDA_STEPS[i] : {}) };
   const last = i === STEPS.length - 1;
 
   const measure = useCallback(() => {

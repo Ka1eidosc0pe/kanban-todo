@@ -17,6 +17,7 @@ import {
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Badge, Button, Modal, Select, useToast } from "@/components/ui";
+import { AgendaView } from "./AgendaView";
 import { BulkBar } from "./BulkBar";
 import { CategoryManager, type CategoryDialog } from "./CategoryManager";
 import { Column, type ColumnProps } from "./Column";
@@ -25,7 +26,7 @@ import { FirstRunEmpty } from "./FirstRunEmpty";
 import { TaskCard } from "./TaskCard";
 import { DUE_FILTER_LABELS, QUICK_FILTER_LABELS, SORT_LABELS, activeFilterCount, matchesFilters, matchesQuery, matchesQuick, sortTasks, subtaskProgressMap, toggleDonePatch, type QuickFilter } from "@/lib/taskUtils";
 import { useStore } from "@/lib/store";
-import { CATEGORY_COLORS, DEFAULT_FILTERS, STATUSES, STATUS_LABELS, type SortMode, type Status, type Task } from "@/lib/types";
+import { CATEGORY_COLORS, DEFAULT_FILTERS, STATUSES, STATUS_LABELS, type BoardView, type SortMode, type Status, type Task } from "@/lib/types";
 
 const STATUS_DOT: Record<Status, string> = {
   created: "bg-slate-400",
@@ -114,13 +115,20 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
   const progressById = useMemo(() => subtaskProgressMap(data.tasks), [data.tasks]);
   const catById = useMemo(() => new Map(data.categories.map((c) => [c.id, c])), [data.categories]);
 
+  const agenda = view === "agenda";
+  const visible = useMemo(
+    () =>
+      sortTasks(
+        data.tasks
+          .filter((t) => matchesQuery(t, query) && matchesQuick(t, quickFilter) && matchesFilters(t, filters, view) && (showArchived || agenda || t.status !== "archived"))
+          .sort((a, b) => a.order - b.order),
+        sort,
+      ),
+    [data.tasks, view, agenda, query, quickFilter, showArchived, filters, sort],
+  );
+
   const columns = useMemo<ColumnDef[]>(() => {
-    const visible = sortTasks(
-      data.tasks
-        .filter((t) => matchesQuery(t, query) && matchesQuick(t, quickFilter) && matchesFilters(t, filters, view) && (showArchived || t.status !== "archived"))
-        .sort((a, b) => a.order - b.order),
-      sort,
-    );
+    if (agenda) return [];
     if (view === "status") {
       return STATUSES.filter((s) => s !== "archived" || showArchived).map((s) => ({
         key: s,
@@ -137,7 +145,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       target: { categoryId: c.id },
       tasks: visible.filter((t) => t.categoryId === c.id),
     }));
-  }, [data.tasks, data.categories, view, query, quickFilter, showArchived, filters, sort]);
+  }, [data.categories, view, agenda, visible, showArchived]);
 
   // selection only counts cards that are still on screen (filters, deletes and undo can change that)
   const selIds = useMemo(() => {
@@ -273,11 +281,12 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     const categoryId = data.categories[0]?.id;
     if (categoryId) dispatch({ type: "addTask", task: { title, categoryId } });
   };
-  const collapsedKeys = collapsed[view];
+  const boardView: BoardView = agenda ? "status" : view; // collapsed state only exists for column views
+  const collapsedKeys = collapsed[boardView];
   const toggleCollapsed = (key: string) =>
     dispatch({
       type: "setPrefs",
-      patch: { collapsed: { ...collapsed, [view]: collapsedKeys.includes(key) ? collapsedKeys.filter((k) => k !== key) : [...collapsedKeys, key] } },
+      patch: { collapsed: { ...collapsed, [boardView]: collapsedKeys.includes(key) ? collapsedKeys.filter((k) => k !== key) : [...collapsedKeys, key] } },
     });
   const filterCount = activeFilterCount(filters, view);
   const filtered = !!query.trim() || !!quickFilter || filterCount > 0;
@@ -300,13 +309,14 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-4 pb-2 pt-4 sm:px-6">
         <p className="text-sm text-slate-500">
-          {view === "status" ? "Drag cards to change their status." : "Drag cards to change their category."}
-          {sort !== "manual" && ` Sorted by ${SORT_LABELS[sort].toLowerCase()}: reordering within a column is off (switch to Manual to reorder).`}
+          {agenda ? "Open tasks, grouped by when they are due." : view === "status" ? "Drag cards to change their status." : "Drag cards to change their category."}
+          {!agenda && sort !== "manual" && ` Sorted by ${SORT_LABELS[sort].toLowerCase()}: reordering within a column is off (switch to Manual to reorder).`}
         </p>
         <div className="flex items-center gap-3">
         {view === "category" && (
           <Button size="sm" onClick={() => setCatDialog({ kind: "manage" })}>Manage categories</Button>
         )}
+        {!agenda && (
         <Select
           label="Sort"
           hideLabel
@@ -315,7 +325,9 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
           options={(Object.keys(SORT_LABELS) as SortMode[]).map((m) => ({ value: m, label: `Sort: ${SORT_LABELS[m]}` }))}
           className="h-8 w-36 text-xs"
         />
+        )}
         <FilterPopover view={view} categories={data.categories} filters={filters} onChange={(f) => dispatch({ type: "setPrefs", patch: { filters: f } })} />
+        {!agenda && (
         <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
           <input
             type="checkbox"
@@ -325,6 +337,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
           />
           Show archived
         </label>
+        )}
         </div>
       </div>
       {filtered && (
@@ -333,7 +346,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
           {quickFilter && <Badge tone="indigo">{QUICK_FILTER_LABELS[quickFilter]}</Badge>}
           {query.trim() && <Badge tone="indigo">“{query.trim()}”</Badge>}
           {filters.priorities.length > 0 && <Badge tone="indigo">Priority: {filters.priorities.join(", ")}</Badge>}
-          {view === "status" && filters.categoryIds.length > 0 && (
+          {view !== "category" && filters.categoryIds.length > 0 && (
             <Badge tone="indigo">Category: {filters.categoryIds.map((id) => catById.get(id)?.name ?? "?").join(", ")}</Badge>
           )}
           {filters.due !== "any" && <Badge tone="indigo">{DUE_FILTER_LABELS[filters.due]}</Badge>}
@@ -352,6 +365,9 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       {data.tasks.length === 0 && (
         <FirstRunEmpty onAddTask={() => onAddTask({})} onQuickAdd={quickAdd} />
       )}
+      {agenda ? (
+        <AgendaView tasks={visible} byId={byId} catById={catById} filtered={filtered} onOpen={onOpenTask} onToggleDone={toggleDone} />
+      ) : (
       <DndContext sensors={sensors} collisionDetection={collision} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
         <div className="flex min-h-0 flex-1 snap-x gap-4 overflow-x-auto px-4 pb-6 pt-2 sm:px-6" style={{ minHeight: "60vh" }}>
           <SortableContext items={columns.map((c) => CATCOL + c.key)} strategy={horizontalListSortingStrategy}>
@@ -396,6 +412,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
         </div>
         <DragOverlay>{active ? renderCard(active, { overlay: true } as React.ComponentProps<typeof TaskCard>) : null}</DragOverlay>
       </DndContext>
+      )}
       {selIds.length > 0 && (
         <BulkBar
           count={selIds.length}

@@ -16,7 +16,7 @@ import { uid, useStore } from "@/lib/store";
 import { useToast } from "@/components/ui";
 import type { Status, ViewMode } from "@/lib/types";
 
-const isView = (v: string | null): v is ViewMode => v === "status" || v === "category";
+const isView = (v: string | null): v is ViewMode => v === "status" || v === "category" || v === "agenda";
 
 export function BoardPage() {
   const { ready, data, dispatch, syncTick, saveFailed, undo, canUndo } = useStore();
@@ -173,7 +173,7 @@ export function BoardPage() {
         )}
       </main>
       {ready && !data.prefs.tourDone && (
-        <CoachTour paused={!!selectedTaskId} onDone={() => dispatch({ type: "setPrefs", patch: { tourDone: true } })} />
+        <CoachTour view={view} paused={!!selectedTaskId} onDone={() => dispatch({ type: "setPrefs", patch: { tourDone: true } })} />
       )}
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <TaskDrawer taskId={selectedTaskId} onClose={closeTask} onOpenTask={openTask} />
