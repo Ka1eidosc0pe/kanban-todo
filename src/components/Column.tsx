@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Button, EmptyState, IconButton, TextField, cn } from "@/components/ui";
@@ -19,6 +19,11 @@ export interface ColumnProps {
   emptyText?: string;
   /** False while the board is sorted: no reordering within the column. */
   reorderable?: boolean;
+  /** Category reordering: sortable node ref/style from Board's SortableColumn, and the drag-handle props. */
+  sortableRef?: (node: HTMLElement | null) => void;
+  sortableStyle?: React.CSSProperties;
+  handleProps?: React.HTMLAttributes<HTMLButtonElement>;
+  dragging?: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   /** Providing `onWipChange` makes the count chip a WIP-limit control (null = no limit). */
@@ -32,8 +37,8 @@ export interface ColumnProps {
 /** Sorting strategy that never shifts siblings (drop positions are meaningless when sorted). */
 const noShift = () => null;
 
-export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, onQuickAdd, emptyText = "Drop a card here", reorderable = true, collapsed = false, onToggleCollapse, wipLimit = null, onWipChange, wipCount, children }: ColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id });
+export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, onQuickAdd, emptyText = "Drop a card here", reorderable = true, sortableRef, sortableStyle, handleProps, dragging, collapsed = false, onToggleCollapse, wipLimit = null, onWipChange, wipCount, children }: ColumnProps) {
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id });
   const headingId = `${id}-heading`;
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -45,6 +50,13 @@ export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, o
     setAdding(false);
     setDraft("");
   };
+  const setNodeRef = useCallback(
+    (node: HTMLElement | null) => {
+      setDropRef(node);
+      sortableRef?.(node);
+    },
+    [setDropRef, sortableRef],
+  );
   const [wipOpen, setWipOpen] = useState(false);
   const wipRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -76,8 +88,10 @@ export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, o
     return (
       <section
         ref={setNodeRef}
+        style={sortableStyle}
         aria-labelledby={headingId}
         className={cn(
+          dragging && "relative z-10 opacity-70",
           "flex max-h-full w-12 shrink-0 snap-start flex-col items-center gap-2 rounded-2xl bg-slate-100/80 py-3 ring-1 ring-slate-200/70 transition-colors",
           isOver && "bg-indigo-100",
         )}
@@ -94,10 +108,26 @@ export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, o
 
   return (
     <section
+      ref={sortableRef}
+      style={sortableStyle}
       aria-labelledby={headingId}
-      className="flex max-h-full w-[18rem] shrink-0 snap-start flex-col rounded-2xl bg-slate-100/80 ring-1 ring-slate-200/70 sm:w-72"
+      className={cn(
+        "flex max-h-full w-[18rem] shrink-0 snap-start flex-col rounded-2xl bg-slate-100/80 ring-1 ring-slate-200/70 sm:w-72",
+        dragging && "relative z-10 opacity-70 shadow-xl",
+      )}
     >
       <div className="relative flex items-center gap-2 px-3 pb-2 pt-3">
+        {handleProps && (
+          <button
+            type="button"
+            {...handleProps}
+            aria-label={`Reorder ${title} (Space to pick up, arrow keys to move)`}
+            title="Drag to reorder"
+            className="-ml-1 flex h-6 w-4 shrink-0 cursor-grab touch-none items-center justify-center rounded text-slate-400 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-indigo-500"
+          >
+            <span aria-hidden className="text-xs leading-none">⋮⋮</span>
+          </button>
+        )}
         <span className={cn("h-2.5 w-2.5 rounded-full", dotClass)} aria-hidden />
         <h2 id={headingId} className="flex-1 truncate text-sm font-semibold text-slate-800">{title}</h2>
         {onWipChange ? (
@@ -153,7 +183,7 @@ export function Column({ id, title, dotClass = "bg-slate-400", taskIds, onAdd, o
       </div>
       {over && <p className="px-3 pb-2 text-[11px] font-medium text-rose-600" role="status">Over limit ({count}/{wipLimit})</p>}
       <div
-        ref={setNodeRef}
+        ref={setDropRef}
         className={cn("flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2 transition-colors", isOver && "rounded-xl bg-indigo-50/70")}
       >
         <SortableContext items={taskIds} strategy={reorderable ? verticalListSortingStrategy : noShift}>

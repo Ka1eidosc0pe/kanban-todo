@@ -8,16 +8,17 @@ import {
   MouseSensor,
   TouchSensor,
   closestCorners,
+  type CollisionDetection,
   useSensor,
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
+import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Badge, Button, Select, useToast } from "@/components/ui";
 import { CategoryManager, type CategoryDialog } from "./CategoryManager";
-import { Column } from "./Column";
+import { Column, type ColumnProps } from "./Column";
 import { FilterPopover } from "./FilterPopover";
 import { FirstRunEmpty } from "./FirstRunEmpty";
 import { TaskCard } from "./TaskCard";
@@ -33,6 +34,13 @@ const STATUS_DOT: Record<Status, string> = {
   archived: "bg-slate-300",
 };
 const COL = "col:";
+const CATCOL = "catcol:"; // sortable id of a category column (its header is the drag handle)
+
+// Column drags only consider other columns; card drags ignore the column sortables.
+const collision: CollisionDetection = (args) => {
+  const isCol = String(args.active.id).startsWith(CATCOL);
+  return closestCorners({ ...args, droppableContainers: args.droppableContainers.filter((d) => String(d.id).startsWith(CATCOL) === isCol) });
+};
 
 export interface BoardProps {
   onOpenTask: (id: string) => void;
@@ -66,6 +74,23 @@ function SortableCard({ task, children }: { task: Task; children: (p: React.Comp
         ...listeners,
       } as React.ComponentProps<typeof TaskCard>)}
     </>
+  );
+}
+
+function SortableColumn({ sortKey, sortable, ...props }: ColumnProps & { sortKey: string; sortable: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: CATCOL + sortKey, disabled: !sortable });
+  return (
+    <Column
+      {...props}
+      {...(sortable
+        ? {
+            sortableRef: setNodeRef,
+            sortableStyle: { transform: CSS.Translate.toString(transform), transition },
+            handleProps: { ...attributes, ...listeners } as React.HTMLAttributes<HTMLButtonElement>,
+            dragging: isDragging,
+          }
+        : {})}
+    />
   );
 }
 
@@ -120,6 +145,16 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     setActiveId(null);
     const { active: a, over } = e;
     if (!over) return;
+    if (String(a.id).startsWith(CATCOL)) {
+      // category column reorder
+      const ids = data.categories.map((c) => c.id);
+      const from = ids.indexOf(String(a.id).slice(CATCOL.length));
+      const to = ids.indexOf(String(over.id).slice(CATCOL.length));
+      if (from === -1 || to === -1 || from === to) return;
+      const id = dispatchUndoable({ type: "reorderCategories", ids: arrayMove(ids, from, to) });
+      toast({ message: "Categories reordered", action: { label: "Undo", onClick: () => undo(id) } });
+      return;
+    }
     const moving = byId.get(String(a.id));
     if (!moving) return;
     const overId = String(over.id);
@@ -253,11 +288,14 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       {data.tasks.length === 0 && (
         <FirstRunEmpty onAddTask={() => onAddTask({})} onQuickAdd={quickAdd} />
       )}
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
+      <DndContext sensors={sensors} collisionDetection={collision} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
         <div className="flex min-h-0 flex-1 snap-x gap-4 overflow-x-auto px-4 pb-6 pt-2 sm:px-6" style={{ minHeight: "60vh" }}>
+          <SortableContext items={columns.map((c) => CATCOL + c.key)} strategy={horizontalListSortingStrategy}>
           {columns.map((c) => (
-            <Column
+            <SortableColumn
               key={c.key}
+              sortKey={c.key}
+              sortable={view === "category"}
               id={COL + c.key}
               title={c.title}
               dotClass={c.dot}
@@ -281,8 +319,9 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
                   {(p) => renderCard(t, p)}
                 </SortableCard>
               ))}
-            </Column>
+            </SortableColumn>
           ))}
+          </SortableContext>
           {view === "category" && (
             <div className="w-[18rem] shrink-0 sm:w-72">
               <Button variant="secondary" className="w-full border-dashed" onClick={() => setCatDialog({ kind: "new" })}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, IconButton, Modal, Select, TextField, cn, useToast } from "@/components/ui";
 import { uid, useStore } from "@/lib/store";
 import { CATEGORY_COLORS, type Category } from "@/lib/types";
@@ -154,6 +154,24 @@ export function CategoryManager({ dialog, onDialogChange }: CategoryManagerProps
   const countFor = (id: string) => data.tasks.filter((t) => t.categoryId === id).length;
   const lastOne = data.categories.length <= 1;
 
+  // Move a category one step; keep focus on the same button (the row re-renders in a new place).
+  const moved = useRef<string | null>(null);
+  const move = (index: number, dir: -1 | 1) => {
+    const ids = data.categories.map((c) => c.id);
+    const j = index + dir;
+    if (j < 0 || j >= ids.length) return;
+    [ids[index], ids[j]] = [ids[j], ids[index]];
+    moved.current = `${ids[j]}:${dir}`;
+    dispatchUndoable({ type: "reorderCategories", ids });
+  };
+  useEffect(() => {
+    if (!moved.current) return;
+    const [id, dir] = moved.current.split(":");
+    moved.current = null;
+    const btn = document.querySelector<HTMLButtonElement>(`[data-move="${id}:${dir}"]`);
+    (btn && !btn.disabled ? btn : document.querySelector<HTMLButtonElement>(`[data-move="${id}:${dir === "1" ? "-1" : "1"}"]`))?.focus();
+  }, [data.categories]);
+
   const requestDelete = (c: Category) => {
     if (lastOne) return;
     if (countFor(c.id) === 0) {
@@ -182,7 +200,7 @@ export function CategoryManager({ dialog, onDialogChange }: CategoryManagerProps
         open={dialog?.kind === "manage"}
         onClose={close}
         title="Manage categories"
-        description="Rename, recolour or delete categories."
+        description="Rename, recolour, reorder or delete categories."
         footer={
           <>
             <Button onClick={() => onDialogChange({ kind: "new" })}><span aria-hidden>+</span> New category</Button>
@@ -191,13 +209,21 @@ export function CategoryManager({ dialog, onDialogChange }: CategoryManagerProps
         }
       >
         <ul className="flex flex-col divide-y divide-slate-100">
-          {data.categories.map((c) => {
+          {data.categories.map((c, i) => {
             const n = countFor(c.id);
             return (
               <li key={c.id} className="flex items-center gap-3 py-2">
                 <span className={cn("h-3 w-3 shrink-0 rounded-full", CATEGORY_COLORS[c.color]?.dot ?? CATEGORY_COLORS.slate.dot)} aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">{c.name}</span>
                 <span className="text-xs text-slate-400">{n} task{n === 1 ? "" : "s"}</span>
+                <div className="flex">
+                  <IconButton label={`Move ${c.name} up`} size="sm" disabled={i === 0} data-move={`${c.id}:-1`} onClick={() => move(i, -1)}>
+                    <span aria-hidden>↑</span>
+                  </IconButton>
+                  <IconButton label={`Move ${c.name} down`} size="sm" disabled={i === data.categories.length - 1} data-move={`${c.id}:1`} onClick={() => move(i, 1)}>
+                    <span aria-hidden>↓</span>
+                  </IconButton>
+                </div>
                 <Button size="sm" aria-label={`Edit ${c.name}`} onClick={() => onDialogChange({ kind: "edit", id: c.id })}>Edit</Button>
                 <IconButton
                   label={lastOne ? "Can't delete the last category" : `Delete ${c.name}`}

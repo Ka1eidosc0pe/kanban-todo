@@ -18,6 +18,7 @@ type Action =
   | { type: "moveTask"; id: string; status?: Status; categoryId?: string; beforeId?: string | null }
   | { type: "addCategory"; category: Category }
   | { type: "updateCategory"; id: string; patch: Partial<Omit<Category, "id">> }
+  | { type: "reorderCategories"; ids: string[] }
   | { type: "deleteCategory"; id: string; moveTo: string | null } // moveTo null => delete its tasks
   | { type: "setPrefs"; patch: Partial<Prefs> }
   | { type: "clearSamples" }
@@ -28,6 +29,7 @@ interface UndoRecord {
   full?: AppData; // whole-state snapshot (restore-type actions)
   tasks: ({ kind: "removed"; task: Task; index: number } | { kind: "added"; id: string } | { kind: "patched"; id: string; before: Partial<Task> })[];
   categories: ({ kind: "removed"; category: Category; index: number } | { kind: "added"; id: string } | { kind: "patched"; id: string; before: Partial<Category> })[];
+  categoryOrder?: string[]; // category ids in their previous order (reorders have no field diff)
   prefs: Partial<Prefs>;
   isSample?: boolean;
 }
@@ -66,9 +68,12 @@ function makeRecord(before: AppData, after: AppData, a: Action): UndoRecord {
   const categories = diffList(before.categories, after.categories).map((e) =>
     e.kind === "removed" ? { kind: "removed" as const, category: e.item, index: e.index } : e,
   );
+  const ids = (l: Category[]) => l.map((c) => c.id);
+  const reordered = before.categories.length === after.categories.length && ids(before.categories).join() !== ids(after.categories).join() && !categories.length;
   return {
     tasks,
     categories,
+    ...(reordered ? { categoryOrder: ids(before.categories) } : {}),
     prefs: fieldDiff(before.prefs, after.prefs) ?? {},
     ...(before.isSample !== after.isSample ? { isSample: before.isSample } : {}),
   };
@@ -95,6 +100,10 @@ function applyUndo(state: AppData, r: UndoRecord): AppData {
     if (e.kind === "added") categories = categories.filter((c) => c.id !== e.id);
     else if (e.kind === "patched") categories = categories.map((c) => (c.id === e.id ? patchBack(c, e.before) : c));
     else if (!categories.some((c) => c.id === e.category.id)) categories = [...categories.slice(0, e.index), e.category, ...categories.slice(e.index)];
+  }
+  if (r.categoryOrder) {
+    const rank = new Map(r.categoryOrder.map((id, i) => [id, i]));
+    categories = [...categories].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity));
   }
   return {
     ...state,
@@ -180,6 +189,12 @@ function reducer(state: AppData, a: Action): AppData {
       return { ...state, categories: [...state.categories, a.category] };
     case "updateCategory":
       return { ...state, categories: state.categories.map((c) => (c.id === a.id ? { ...c, ...a.patch } : c)) };
+    case "reorderCategories": {
+      const byId = new Map(state.categories.map((c) => [c.id, c]));
+      const seen = new Set(a.ids.filter((id) => byId.has(id)));
+      // unknown ids are dropped; categories missing from `ids` keep their relative order at the end
+      return { ...state, categories: [...[...seen].map((id) => byId.get(id)!), ...state.categories.filter((c) => !seen.has(c.id))] };
+    }
     case "deleteCategory": {
       const categories = state.categories.filter((c) => c.id !== a.id);
       const tasks =
