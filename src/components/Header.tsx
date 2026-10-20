@@ -42,7 +42,7 @@ export function Header({ view, onViewChange, query, onQueryChange, onAddTask, me
         </div>
 
         <div className="ml-auto flex items-center gap-2 sm:ml-0">
-          <Button variant="primary" onClick={onAddTask} aria-keyshortcuts="N">
+          <Button variant="primary" onClick={onAddTask} data-tour="add-task" aria-keyshortcuts="N">
             <span aria-hidden>+</span> Add task
             <kbd className="hidden rounded bg-white/20 px-1.5 text-[10px] font-semibold sm:inline">N</kbd>
           </Button>

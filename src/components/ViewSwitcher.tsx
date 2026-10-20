@@ -10,7 +10,7 @@ const OPTIONS: { value: ViewMode; label: string }[] = [
 
 export function ViewSwitcher({ value, onChange }: { value: ViewMode; onChange: (v: ViewMode) => void }) {
   return (
-    <div role="group" aria-label="Board view" className="inline-flex rounded-lg bg-slate-100 p-0.5">
+    <div role="group" aria-label="Board view" data-tour="view-switcher" className="inline-flex rounded-lg bg-slate-100 p-0.5">
       {OPTIONS.map((o) => (
         <button
           key={o.value}

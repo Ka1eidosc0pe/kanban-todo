@@ -72,7 +72,12 @@ function reducer(state: AppData, a: Action): AppData {
       const categories = state.categories.filter((c) => c.id !== a.id);
       const tasks =
         a.moveTo === null
-          ? state.tasks.filter((t) => t.categoryId !== a.id)
+          ? state.tasks.filter((t) => {
+              if (t.categoryId === a.id) return false;
+              // also drop subtasks whose parent is being deleted
+              const parent = t.parentId ? state.tasks.find((p) => p.id === t.parentId) : undefined;
+              return parent?.categoryId !== a.id;
+            })
           : state.tasks.map((t) => (t.categoryId === a.id ? { ...t, categoryId: a.moveTo as string } : t));
       return { ...state, categories, tasks };
     }
@@ -117,6 +122,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       rawDispatch({ type: "hydrate", data: { ...saved, prefs: { ...saved.prefs, lastVisit: Date.now() } } });
     } else {
       setFirst(true);
+      rawDispatch({ type: "setPrefs", patch: { lastVisit: Date.now() } }); // so the next visit has a "last visit"
     }
     setReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */

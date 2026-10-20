@@ -1,11 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Board } from "./Board";
+import { CoachTour } from "./CoachTour";
 import { Header } from "./Header";
 import { HeaderMenu } from "./HeaderMenu";
+import { SampleBanner } from "./SampleBanner";
 import { TaskDrawer } from "./TaskDrawer";
+import { WelcomeBack } from "./WelcomeBack";
+import type { QuickFilter } from "@/lib/taskUtils";
 import { uid, useStore } from "@/lib/store";
 import { useToast } from "@/components/ui";
 import type { Status, ViewMode } from "@/lib/types";
@@ -18,6 +22,7 @@ export function BoardPage() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const [quick, setQuick] = useState<QuickFilter | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const urlView = params.get("view");
@@ -96,14 +101,18 @@ export function BoardPage() {
         menuSlot={<HeaderMenu />}
         searchRef={searchRef}
       />
-      {/* EXTENSION POINT: onboarding / "welcome back" strip renders here, above the board. */}
+      {ready && <SampleBanner />}
+      {ready && <WelcomeBack active={quick} onPick={setQuick} />}
       <main className="flex min-h-0 flex-1 flex-col">
         {ready ? (
-          <Board onOpenTask={openTask} onAddTask={addTask} />
+          <Board onOpenTask={openTask} onAddTask={addTask} quickFilter={quick} onQuickFilterChange={setQuick} />
         ) : (
           <p className="p-8 text-sm text-slate-400" role="status">Loading your board…</p>
         )}
       </main>
+      {ready && !data.prefs.tourDone && (
+        <CoachTour paused={!!selectedTaskId} onDone={() => dispatch({ type: "setPrefs", patch: { tourDone: true } })} />
+      )}
       <TaskDrawer taskId={selectedTaskId} onClose={closeTask} onOpenTask={openTask} />
     </div>
   );
