@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -16,7 +16,8 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Badge, Button, Select, useToast } from "@/components/ui";
+import { Badge, Button, Modal, Select, useToast } from "@/components/ui";
+import { BulkBar } from "./BulkBar";
 import { CategoryManager, type CategoryDialog } from "./CategoryManager";
 import { Column, type ColumnProps } from "./Column";
 import { FilterPopover } from "./FilterPopover";
@@ -99,6 +100,8 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
   const { toast } = useToast();
   const { view, query, showArchived, filters, sort, collapsed, wipLimit } = data.prefs;
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [catDialog, setCatDialog] = useState<CategoryDialog>(null);
 
   const sensors = useSensors(
@@ -135,6 +138,66 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       tasks: visible.filter((t) => t.categoryId === c.id),
     }));
   }, [data.tasks, data.categories, view, query, quickFilter, showArchived, filters, sort]);
+
+  // selection only counts cards that are still on screen (filters, deletes and undo can change that)
+  const selIds = useMemo(() => {
+    const visible = new Set(columns.flatMap((c) => c.tasks.map((t) => t.id)));
+    return [...selected].filter((id) => visible.has(id));
+  }, [selected, columns]);
+  const handleOpen = useCallback(
+    (id: string, mods?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
+      if (mods && (mods.shiftKey || mods.metaKey || mods.ctrlKey)) {
+        setSelected((s) => {
+          const n = new Set(s);
+          if (!n.delete(id)) n.add(id);
+          return n;
+        });
+      } else onOpenTask(id);
+    },
+    [onOpenTask],
+  );
+  const clearSelection = useCallback(() => setSelected(new Set()), []);
+
+  // Esc clears the selection unless something else (drag, dialog, menu, text field) owns it
+  const hasSel = selIds.length > 0;
+  useEffect(() => {
+    if (!hasSel || activeId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA)$/.test(el.tagName))) return;
+      if (document.querySelector('[aria-modal="true"],[role="menu"],[data-popover]')) return;
+      clearSelection();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [hasSel, activeId, clearSelection]);
+
+  const undoToast = (message: string, id: number) => toast({ message, action: { label: "Undo", onClick: () => undo(id) } });
+  const plural = (n: number) => `${n} task${n === 1 ? "" : "s"}`;
+  const bulkStatus = (status: Status) => {
+    const id = dispatchUndoable({ type: "bulkUpdate", ids: selIds, patch: { status } });
+    undoToast(`Moved ${plural(selIds.length)} to ${STATUS_LABELS[status]}`, id);
+    clearSelection();
+  };
+  const bulkCategory = (categoryId: string) => {
+    const n = selIds.filter((i) => !byId.get(i)?.parentId).length; // subtasks follow their parent
+    if (n === 0) return toast("Subtasks follow their parent's category");
+    const id = dispatchUndoable({ type: "bulkUpdate", ids: selIds, patch: { categoryId } });
+    undoToast(`Moved ${plural(n)} to ${catById.get(categoryId)?.name ?? "category"}`, id);
+    clearSelection();
+  };
+  const bulkArchive = () => bulkStatus("archived");
+  const deleteCount = useMemo(() => {
+    const ids = new Set(selIds);
+    return data.tasks.filter((t) => ids.has(t.id) || (t.parentId && ids.has(t.parentId))).length;
+  }, [selIds, data.tasks]);
+  const doBulkDelete = () => {
+    const id = dispatchUndoable({ type: "bulkDelete", ids: selIds });
+    undoToast(`Deleted ${plural(deleteCount)}`, id);
+    setConfirmDelete(false);
+    clearSelection();
+  };
 
   const columnOf = (t: Task) => (view === "status" ? t.status : t.categoryId);
   const active = activeId ? byId.get(activeId) : undefined;
@@ -226,7 +289,8 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       category={catById.get(t.categoryId)}
       parent={t.parentId ? byId.get(t.parentId) : undefined}
       progress={t.parentId ? null : (progressById.get(t.id) ?? null)}
-      onOpen={onOpenTask}
+      selected={selected.has(t.id)}
+      onOpen={handleOpen}
       onToggleDone={toggleDone}
       {...extra}
     />
@@ -332,6 +396,35 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
         </div>
         <DragOverlay>{active ? renderCard(active, { overlay: true } as React.ComponentProps<typeof TaskCard>) : null}</DragOverlay>
       </DndContext>
+      {selIds.length > 0 && (
+        <BulkBar
+          count={selIds.length}
+          categories={data.categories}
+          onStatus={bulkStatus}
+          onCategory={bulkCategory}
+          onArchive={bulkArchive}
+          onDelete={() => setConfirmDelete(true)}
+          onClear={clearSelection}
+        />
+      )}
+      <Modal
+        open={confirmDelete && selIds.length > 0}
+        onClose={() => setConfirmDelete(false)}
+        title={`Delete ${plural(deleteCount)}?`}
+        description={
+          deleteCount > selIds.length
+            ? `This includes ${deleteCount - selIds.length} subtask${deleteCount - selIds.length === 1 ? "" : "s"} of the selected tasks. You can undo this.`
+            : "You can undo this."
+        }
+        footer={
+          <>
+            <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
+            <Button variant="danger" onClick={doBulkDelete}>Delete</Button>
+          </>
+        }
+      >
+        <span className="sr-only">Confirm delete</span>
+      </Modal>
       <CategoryManager dialog={catDialog} onDialogChange={setCatDialog} />
     </div>
   );

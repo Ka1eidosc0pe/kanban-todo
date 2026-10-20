@@ -21,7 +21,14 @@ An interactive kanban to-do board with drag-and-drop cards, two ways of grouping
 - **Category view:** Career, College, Personal + create, rename, recolor, delete your own (deleting offers *move tasks* or *delete tasks*, with undo)
 - Tasks with notes, due date and priority
 - Subtasks with their own independent status. They show as compact, dashed-border cards with a parent chip, and can be dragged like any card
-- Search and filters, undo toasts, keyboard-accessible drag-and-drop
+- Search, plus filters (priority, category, due) and per-board sorting (manual, due date, priority)
+- Undo toasts, keyboard-accessible drag-and-drop, and long-press drag on touch screens
+- Keyboard shortcuts: `N` new task, `/` search, `Cmd/Ctrl+Z` undo, `?` shortcut list
+- Relative due dates ("Today", "Tomorrow", "Fri") with a distinct due-today style
+- Inline quick-add at the bottom of each column
+- Collapsible columns and a WIP limit for "In progress"
+- Reorder category columns by dragging their headers (or with the up/down buttons in Manage categories)
+- Bulk actions: Shift/Cmd/Ctrl+click to select cards, then move, archive or delete them in one undoable step
 
 ## User flows
 

@@ -19,7 +19,9 @@ export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>
   /** Subtask progress for main tasks. */
   progress?: { done: number; total: number } | null;
   view: ViewMode;
-  onOpen?: (id: string) => void;
+  /** Click/Enter; `mods` lets the board treat Shift/Cmd/Ctrl as "toggle selection". */
+  onOpen?: (id: string, mods?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => void;
+  selected?: boolean;
   /** Subtask checkbox toggle. */
   onToggleDone?: (task: Task) => void;
   dragging?: boolean;
@@ -27,7 +29,7 @@ export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 }
 
 export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function TaskCard(
-  { task, category, parent, progress, view, onOpen, onToggleDone, dragging, overlay, className, onKeyDown, ...rest },
+  { task, category, parent, progress, view, onOpen, onToggleDone, selected, dragging, overlay, className, onKeyDown, ...rest },
   ref,
 ) {
   const isSub = task.parentId !== null;
@@ -38,14 +40,15 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
 
   const handleKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(e);
-    if (e.key === "Enter" && !e.defaultPrevented && e.target === e.currentTarget) onOpen?.(task.id);
+    if (e.key === "Enter" && !e.defaultPrevented && e.target === e.currentTarget) onOpen?.(task.id, e);
   };
 
   const shared = {
     ref,
     role: "button" as const,
     tabIndex: 0,
-    onClick: () => onOpen?.(task.id),
+    onClick: (e: React.MouseEvent) => onOpen?.(task.id, e),
+    "aria-pressed": selected ? true : undefined,
     onKeyDown: handleKey,
     "aria-label": `${isSub ? "Subtask" : "Task"}: ${task.title}`,
     "data-variant": isSub ? "subtask" : "main",
@@ -58,6 +61,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
         {...shared}
         className={cn(
           "group flex cursor-grab touch-manipulation select-none items-start gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50/70 px-2.5 py-2 outline-none transition-colors hover:border-indigo-300 hover:bg-white focus-visible:ring-2 focus-visible:ring-indigo-500",
+          selected && "ring-2 ring-indigo-500 ring-offset-1",
           dragging && "opacity-40",
           overlay && "cursor-grabbing rotate-1 border-solid bg-white shadow-lg",
           className,
@@ -109,6 +113,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
         "cursor-grab touch-manipulation select-none rounded-xl border border-slate-200 bg-white p-3 shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-500",
         overdue && "border-l-4 border-l-rose-400",
         dueToday && "border-l-4 border-l-amber-400",
+        selected && "ring-2 ring-indigo-500 ring-offset-1",
         dragging && "opacity-40",
         overlay && "cursor-grabbing rotate-2 shadow-xl",
         className,

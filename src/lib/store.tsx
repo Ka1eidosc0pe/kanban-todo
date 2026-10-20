@@ -18,6 +18,8 @@ type Action =
   | { type: "moveTask"; id: string; status?: Status; categoryId?: string; beforeId?: string | null }
   | { type: "addCategory"; category: Category }
   | { type: "updateCategory"; id: string; patch: Partial<Omit<Category, "id">> }
+  | { type: "bulkUpdate"; ids: string[]; patch: Pick<Partial<Task>, "status" | "categoryId"> }
+  | { type: "bulkDelete"; ids: string[] }
   | { type: "reorderCategories"; ids: string[] }
   | { type: "deleteCategory"; id: string; moveTo: string | null } // moveTo null => delete its tasks
   | { type: "setPrefs"; patch: Partial<Prefs> }
@@ -157,6 +159,12 @@ function reducer(state: AppData, a: Action): AppData {
           return sub.categoryId !== t.categoryId || sub.status !== t.status ? { ...sub, updatedAt: now } : t;
         }),
       };
+    }
+    case "bulkUpdate": // same rules as updateTask per task (subtasks follow their parent's category, archiving cascades)
+      return a.ids.reduce((s, id) => reducer(s, { type: "updateTask", id, patch: a.patch }), state);
+    case "bulkDelete": {
+      const ids = new Set(a.ids);
+      return { ...state, tasks: state.tasks.filter((t) => !ids.has(t.id) && !(t.parentId && ids.has(t.parentId))) };
     }
     case "deleteTask": // removes the task and its subtasks
       return { ...state, tasks: state.tasks.filter((t) => t.id !== a.id && t.parentId !== a.id) };
