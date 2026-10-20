@@ -10,7 +10,7 @@ export const STATUS_TONE = { created: "neutral", planned: "sky", in_progress: "a
 export const PRIORITY: Record<Priority, { label: string; cls: string }> = {
   high: { label: "High", cls: "bg-rose-500" },
   medium: { label: "Medium", cls: "bg-amber-400" },
-  low: { label: "Low", cls: "bg-slate-300" },
+  low: { label: "Low", cls: "bg-slate-300 dark:bg-slate-600" },
 };
 
 export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onClick"> {
@@ -62,10 +62,10 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
       <div
         {...shared}
         className={cn(
-          "group flex cursor-grab touch-manipulation select-none items-start gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50/70 px-2.5 py-2 outline-none transition-colors hover:border-indigo-300 hover:bg-white focus-visible:ring-2 focus-visible:ring-indigo-500",
-          selected && "ring-2 ring-indigo-500 ring-offset-1",
+          "group flex cursor-grab touch-manipulation select-none items-start gap-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800 px-2.5 py-2 outline-none transition-colors hover:border-indigo-300 dark:hover:border-indigo-500/60 hover:bg-white dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400",
+          selected && "ring-2 ring-indigo-500 dark:ring-indigo-400 ring-offset-1 dark:ring-offset-slate-900",
           dragging && "opacity-40",
-          overlay && "cursor-grabbing rotate-1 border-solid bg-white shadow-lg",
+          overlay && "cursor-grabbing rotate-1 border-solid bg-white dark:bg-slate-800 shadow-lg",
           className,
         )}
       >
@@ -83,14 +83,14 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
             onToggleDone?.(task);
           }}
           className={cn(
-            "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] leading-none transition-colors focus-visible:outline-2 focus-visible:outline-indigo-500",
-            done ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-400 bg-white hover:border-indigo-500",
+            "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] leading-none transition-colors focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400",
+            done ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 hover:border-indigo-500 dark:hover:border-indigo-400",
           )}
         >
           {done && <span aria-hidden>✓</span>}
         </button>
         <div className="min-w-0 flex-1">
-          <p className={cn("text-xs font-medium leading-snug text-slate-700", done && "text-slate-400 line-through")}>{task.title}</p>
+          <p className={cn("text-xs font-medium leading-snug", done ? "text-slate-400 line-through" : "text-slate-700 dark:text-slate-200")}>{task.title}</p>
           <div className="mt-1 flex flex-wrap items-center gap-1">
             {parent && (
               <Badge tone="indigo" className="max-w-[10rem] text-[10px]" title={`Subtask of ${parent.title}`}>
@@ -99,7 +99,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
             )}
             {view === "category" && <Badge tone={STATUS_TONE[task.status]} className="text-[10px]">{STATUS_LABELS[task.status]}</Badge>}
             {task.dueDate && (
-              <span className={cn("text-[10px]", overdue ? "font-semibold text-rose-600" : dueToday ? "font-semibold text-amber-600" : "text-slate-400")}>{dueLabel(task.dueDate, today)}</span>
+              <span className={cn("text-[10px]", overdue ? "font-semibold text-rose-600 dark:text-rose-400" : dueToday ? "font-semibold text-amber-600 dark:text-amber-400" : "text-slate-400")}>{dueLabel(task.dueDate, today)}</span>
             )}
           </div>
         </div>
@@ -112,16 +112,16 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
     <div
       {...shared}
       className={cn(
-        "cursor-grab touch-manipulation select-none rounded-xl border border-slate-200 bg-white p-3 shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-500",
+        "cursor-grab touch-manipulation select-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400",
         overdue && "border-l-4 border-l-rose-400",
         dueToday && "border-l-4 border-l-amber-400",
-        selected && "ring-2 ring-indigo-500 ring-offset-1",
+        selected && "ring-2 ring-indigo-500 dark:ring-indigo-400 ring-offset-1 dark:ring-offset-slate-900",
         dragging && "opacity-40",
         overlay && "cursor-grabbing rotate-2 shadow-xl",
         className,
       )}
     >
-      <p className={cn("text-sm font-semibold leading-snug text-slate-900", done && "text-slate-500 line-through")}>
+      <p className={cn("text-sm font-semibold leading-snug", done ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-slate-100")}>
         {task.title}
         {task.repeat && <span className="ml-1.5 text-xs font-normal text-slate-400" title={`Repeats ${task.repeat}`} aria-label={`Repeats ${task.repeat}`}>↻</span>}
       </p>
@@ -136,7 +136,7 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
             </Badge>
           )
         )}
-        <span className="inline-flex items-center gap-1 text-[11px] text-slate-500" title={`${pr.label} priority`}>
+        <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400" title={`${pr.label} priority`}>
           <span className={cn("h-2 w-2 rounded-full", pr.cls)} aria-hidden />
           {pr.label}
         </span>
@@ -144,24 +144,24 @@ export const TaskCard = memo(forwardRef<HTMLDivElement, TaskCardProps>(function 
       {(task.dueDate || progress || checklist) && (
         <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
           {task.dueDate ? (
-            <span className={cn("inline-flex items-center gap-1", overdue ? "font-semibold text-rose-600" : dueToday ? "font-semibold text-amber-700" : "text-slate-500")}>
+            <span className={cn("inline-flex items-center gap-1", overdue ? "font-semibold text-rose-600 dark:text-rose-400" : dueToday ? "font-semibold text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400")}>
               <span aria-hidden>📅</span>
               {dueLabel(task.dueDate, today)}
-              {overdue && <span className="rounded bg-rose-50 px-1 text-[10px] uppercase tracking-wide">Overdue</span>}
-              {dueToday && <span className="rounded bg-amber-50 px-1 text-[10px] uppercase tracking-wide">Due today</span>}
+              {overdue && <span className="rounded bg-rose-50 dark:bg-rose-500/15 px-1 text-[10px] uppercase tracking-wide">Overdue</span>}
+              {dueToday && <span className="rounded bg-amber-50 dark:bg-amber-500/15 px-1 text-[10px] uppercase tracking-wide">Due today</span>}
             </span>
           ) : (
             <span />
           )}
           <span className="inline-flex items-center gap-2">
           {checklist && (
-            <span className="text-slate-500" title={`${checklist.done} of ${checklist.total} checklist items done`}>
+            <span className="text-slate-500 dark:text-slate-400" title={`${checklist.done} of ${checklist.total} checklist items done`}>
               <span aria-hidden>☑</span> {checklist.done}/{checklist.total}
             </span>
           )}
           {progress && (
-            <span className="inline-flex items-center gap-1.5 text-slate-500" title={`${progress.done} of ${progress.total} subtasks done`}>
-              <span className="h-1 w-10 overflow-hidden rounded-full bg-slate-200" aria-hidden>
+            <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400" title={`${progress.done} of ${progress.total} subtasks done`}>
+              <span className="h-1 w-10 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" aria-hidden>
                 <span className="block h-full bg-emerald-500" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
               </span>
               {progress.done}/{progress.total}

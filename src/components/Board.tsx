@@ -31,11 +31,11 @@ import { uid, useStore } from "@/lib/store";
 import { CATEGORY_COLORS, DEFAULT_FILTERS, STATUSES, STATUS_LABELS, type BoardView, type SortMode, type Status, type Task } from "@/lib/types";
 
 const STATUS_DOT: Record<Status, string> = {
-  created: "bg-slate-400",
+  created: "bg-slate-400 dark:bg-slate-500",
   planned: "bg-sky-500",
   in_progress: "bg-amber-500",
   completed: "bg-emerald-500",
-  archived: "bg-slate-300",
+  archived: "bg-slate-300 dark:bg-slate-600",
 };
 const COL = "col:";
 const CATCOL = "catcol:"; // sortable id of a category column (its header is the drag handle)
@@ -333,7 +333,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-4 pb-2 pt-4 sm:px-6">
         <div className="flex flex-col gap-0.5">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {agenda ? "Open tasks, grouped by when they are due." : view === "status" ? "Drag cards to change their status." : "Drag cards to change their category."}
           {!agenda && sort !== "manual" && ` Sorted by ${SORT_LABELS[sort].toLowerCase()}: reordering within a column is off (switch to Manual to reorder).`}
         </p>
@@ -355,12 +355,12 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
         )}
         <FilterPopover view={view} categories={data.categories} filters={filters} onChange={(f) => dispatch({ type: "setPrefs", patch: { filters: f } })} />
         {!agenda && (
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
           <input
             type="checkbox"
             checked={showArchived}
             onChange={(e) => dispatch({ type: "setPrefs", patch: { showArchived: e.target.checked } })}
-            className="h-4 w-4 rounded border-slate-300 accent-indigo-600"
+            className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600 dark:accent-indigo-400"
           />
           Show archived
         </label>
@@ -369,7 +369,7 @@ export function Board({ onOpenTask, onAddTask, quickFilter = null, onQuickFilter
       </div>
       {filtered && (
         <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-2 px-4 pb-1 sm:px-6" role="status">
-          <span className="text-sm text-slate-500">Filtered:</span>
+          <span className="text-sm text-slate-500 dark:text-slate-400">Filtered:</span>
           {quickFilter && <Badge tone="indigo">{QUICK_FILTER_LABELS[quickFilter]}</Badge>}
           {query.trim() && <Badge tone="indigo">“{query.trim()}”</Badge>}
           {filters.priorities.length > 0 && <Badge tone="indigo">Priority: {filters.priorities.join(", ")}</Badge>}

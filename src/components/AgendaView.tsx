@@ -31,9 +31,9 @@ export function AgendaView({ tasks, byId, catById, filtered, onOpen, onToggleDon
         <div className="flex flex-col gap-6">
           {groups.map((g) => (
             <section key={g.key} aria-labelledby={`agenda-${g.key}`}>
-              <h2 id={`agenda-${g.key}`} className={cn("mb-2 flex items-center gap-2 text-sm font-semibold", g.key === "overdue" ? "text-rose-700" : g.key === "today" ? "text-amber-700" : "text-slate-800")}>
+              <h2 id={`agenda-${g.key}`} className={cn("mb-2 flex items-center gap-2 text-sm font-semibold", g.key === "overdue" ? "text-rose-700 dark:text-rose-300" : g.key === "today" ? "text-amber-700 dark:text-amber-300" : "text-slate-800 dark:text-slate-100")}>
                 {g.label}
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500" aria-label={`${g.tasks.length} tasks`}>{g.tasks.length}</span>
+                <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400" aria-label={`${g.tasks.length} tasks`}>{g.tasks.length}</span>
               </h2>
               <ul className="flex flex-col gap-1.5">
                 {g.tasks.map((t) => {
@@ -45,8 +45,8 @@ export function AgendaView({ tasks, byId, catById, filtered, onOpen, onToggleDon
                       key={t.id}
                       data-agenda-row
                       className={cn(
-                        "flex items-center gap-3 rounded-xl border bg-white px-3 py-2 shadow-sm",
-                        t.parentId ? "border-dashed border-slate-300 bg-slate-50/70" : "border-slate-200",
+                        "flex items-center gap-3 rounded-xl border bg-white dark:bg-slate-800 px-3 py-2 shadow-sm",
+                        t.parentId ? "border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700",
                         g.key === "overdue" && "border-l-4 border-l-rose-400",
                         g.key === "today" && "border-l-4 border-l-amber-400",
                       )}
@@ -57,13 +57,13 @@ export function AgendaView({ tasks, byId, catById, filtered, onOpen, onToggleDon
                         aria-checked={false}
                         aria-label={`Mark "${t.title}" done`}
                         onClick={() => onToggleDone(t)}
-                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-slate-400 bg-white text-[11px] leading-none hover:border-indigo-500 focus-visible:outline-2 focus-visible:outline-indigo-500"
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 text-[11px] leading-none hover:border-indigo-500 dark:hover:border-indigo-400 focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400"
                       />
                       <div className="min-w-0 flex-1">
                         <button
                           type="button"
                           onClick={() => onOpen(t.id)}
-                          className="block max-w-full truncate rounded text-left text-sm font-medium text-slate-900 hover:underline focus-visible:outline-2 focus-visible:outline-indigo-500"
+                          className="block max-w-full truncate rounded text-left text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline focus-visible:outline-2 focus-visible:outline-indigo-500 dark:focus-visible:outline-indigo-400"
                         >
                           {t.title}
                           {t.repeat && <span className="ml-1.5 text-xs font-normal text-slate-400" aria-label={`Repeats ${t.repeat}`}>↻</span>}
@@ -83,12 +83,12 @@ export function AgendaView({ tasks, byId, catById, filtered, onOpen, onToggleDon
                           <Badge tone={STATUS_TONE[t.status]}>{STATUS_LABELS[t.status]}</Badge>
                         </div>
                       </div>
-                      <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-slate-500" title={`${pr.label} priority`}>
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400" title={`${pr.label} priority`}>
                         <span className={cn("h-2 w-2 rounded-full", pr.cls)} aria-hidden />
                         <span className="sr-only">{pr.label} priority</span>
                       </span>
                       {t.dueDate && (
-                        <span className={cn("w-20 shrink-0 text-right text-xs", g.key === "overdue" ? "font-semibold text-rose-600" : g.key === "today" ? "font-semibold text-amber-700" : "text-slate-500")}>
+                        <span className={cn("w-20 shrink-0 text-right text-xs", g.key === "overdue" ? "font-semibold text-rose-600 dark:text-rose-400" : g.key === "today" ? "font-semibold text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400")}>
                           {dueLabel(t.dueDate, today)}
                         </span>
                       )}

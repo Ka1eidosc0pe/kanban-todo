@@ -10,7 +10,7 @@ export function ProgressStrip() {
   const { done, streak } = useMemo(() => ({ done: doneThisWeek(data.tasks), streak: completionStreak(data.tasks) }), [data.tasks]);
   if (data.isSample || data.tasks.length === 0 || (done === 0 && streak === 0)) return null;
   return (
-    <p className="flex flex-wrap items-center gap-x-3 text-xs text-slate-500" aria-label="Progress">
+    <p className="flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400" aria-label="Progress">
       <span><span aria-hidden>✓</span> {done} done this week</span>
       {streak > 0 && <span><span aria-hidden>🔥</span> {streak}-day streak</span>}
     </p>
