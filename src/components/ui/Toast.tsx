@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "./Button";
 
 export interface ToastOptions {
   message: string;
@@ -63,21 +62,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {items.map((t) => (
           <div
             key={t.id}
-            className="toast-in pointer-events-auto flex items-center gap-3 rounded-xl bg-slate-900 py-2 pl-4 pr-2 text-sm text-white shadow-lg"
+            className="toast-in pointer-events-auto flex items-center gap-3 rounded-xl bg-slate-900 dark:bg-slate-800 dark:ring-1 dark:ring-slate-700 py-2 pl-4 pr-2 text-sm text-white shadow-lg"
           >
             <span>{t.message}</span>
             {t.action && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-indigo-200 font-semibold underline-offset-2 hover:bg-white/10 hover:text-white"
+              <button
+                type="button"
+                className="inline-flex h-8 items-center rounded-lg px-3 text-xs font-semibold text-indigo-200 underline-offset-2 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
                 onClick={() => {
                   t.action?.onClick();
                   dismiss(t.id);
                 }}
               >
                 {t.action.label}
-              </Button>
+              </button>
             )}
             <button
               type="button"

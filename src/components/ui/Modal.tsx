@@ -21,26 +21,26 @@ export function Modal({ open, onClose, title, description, children, footer, cla
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px]" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-[1px]" onClick={onClose} aria-hidden />
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={cn("relative flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl bg-white shadow-xl outline-none", className)}
+        className={cn("relative flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl bg-white shadow-xl dark:bg-slate-900 dark:ring-1 dark:ring-slate-700 outline-none", className)}
       >
         <div className="flex items-start justify-between gap-4 px-5 pt-5">
           <div>
-            <h2 id={titleId} className="text-base font-semibold text-slate-900">{title}</h2>
-            {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+            <h2 id={titleId} className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+            {description && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>}
           </div>
           <IconButton label="Close" size="sm" onClick={onClose}>
             <span aria-hidden>✕</span>
           </IconButton>
         </div>
         <div className="overflow-y-auto px-5 py-4">{children}</div>
-        {footer && <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">{footer}</div>}
+        {footer && <div className="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800 px-5 py-3">{footer}</div>}
       </div>
     </div>
   );
